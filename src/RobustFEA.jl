@@ -1,5 +1,7 @@
 module RobustFEA
 
-greet() = print("Hello World!")
+include("geometry/geometry.jl")
 
-end # module RobustFEA
+export Point, distance, Δx, Δy
+
+end

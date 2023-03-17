@@ -2,3 +2,6 @@ name = "RobustFEA"
 uuid = "f83e7d5b-ea45-48e0-be54-bb467dff0e67"
 authors = ["Lorran Oliveira <lorranfoliveira@gmail.com>"]
 version = "0.1.0"
+
+[deps]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
