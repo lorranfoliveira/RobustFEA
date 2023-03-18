@@ -1,4 +1,4 @@
-include("../point/point.jl")
+include("point.jl")
 
 mutable struct Segment
     p1::Point

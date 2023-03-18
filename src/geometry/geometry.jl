@@ -1,2 +1,2 @@
-include("point/point.jl")
-include("segment/segment.jl")
+include("point.jl")
+include("segment.jl")
