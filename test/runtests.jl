@@ -1,4 +1,4 @@
-include("../src/RobustFEA.jl")
+include("../src/RobustOtm.jl")
 
 using Test
 
