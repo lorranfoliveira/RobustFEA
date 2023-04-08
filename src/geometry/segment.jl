@@ -1,5 +1,7 @@
 include("point.jl")
 
+export Segment, length, cos, sin, angle
+
 mutable struct Segment
     p1::Point
     p2::Point
