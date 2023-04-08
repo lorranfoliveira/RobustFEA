@@ -1,10 +1,15 @@
+export Constraint, is_free
+
 mutable struct Constraint
-    rx::Bool
-    ry::Bool
+    dofs::Vector{Bool}
 
     function Constraint(rx::Bool, ry::Bool)
-        new(rx, ry)
+        new([rx, ry])
+    end
+
+    function Constraint()
+        new([false, false])
     end
 end
 
-is_free(constraint::Constraint) = constraint.rx == constraint.ry == false
+is_free(constraint::Constraint) = all(constraint.dofs .== false)
