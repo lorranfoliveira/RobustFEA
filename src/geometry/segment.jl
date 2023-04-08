@@ -15,8 +15,8 @@ end
 
 length(segment::Segment) = distance(segment.p1, segment.p2)
 
-cos(segment::Segment) = (segment.p2.x - segment.p1.x) / length(segment)
+cos(segment::Segment) = (segment.p2.coords[1] - segment.p1.coords[1]) / length(segment)
 
-sin(segment::Segment) = (segment.p2.y - segment.p1.y) / length(segment)
+sin(segment::Segment) = (segment.p2.coords[2] - segment.p1.coords[2]) / length(segment)
 
 angle(segment::Segment) = atan(sin(segment), cos(segment))

@@ -5,31 +5,25 @@ using Test
 # ======================================
 # Point
 # ======================================
-using .RobustFEA: Point, distance, Δx, Δy
+using .RobustFEA: Point, distance, Δcoords
 
 @testset verbose = true "Point" begin
     @testset "Constructor_1" begin
         p = Point(1.0, 2.0)
-        @test p.x == 1.0
-        @test p.y == 2.0
+        @test p.coords[1] == 1.0
+        @test p.coords[2] == 2.0
     end
 
     @testset "Constructor_2" begin
         p = Point()
-        @test p.x == 0.0
-        @test p.y == 0.0
+        @test p.coords[1] == 0.0
+        @test p.coords[2] == 0.0
     end
 
-    @testset "Δx" begin
-        p1 = Point()
+    @testset "Δcoords" begin
+        p1 = Point(1.1, 2.9)
         p2 = Point(3.0, 4.0)
-        @test Δx(p1, p2) == 3.0
-    end
-
-    @testset "Δy" begin
-        p1 = Point()
-        p2 = Point(3.0, 4.0)
-        @test Δy(p1, p2) == 4.0
+        @test Δcoords(p1, p2) == [1.9, 1.1]
     end
 
     @testset "distance" begin
@@ -52,19 +46,19 @@ using .RobustFEA: Segment, length, cos, sin, angle
         p2 = Point(3.0, 4.0)
         s = Segment(p1, p2)
 
-        @test s.p1.x == 1.0
-        @test s.p1.y == 2.0
-        @test s.p2.x == 3.0
-        @test s.p2.y == 4.0
+        @test s.p1.coords[1] == 1.0
+        @test s.p1.coords[2] == 2.0
+        @test s.p2.coords[1] == 3.0
+        @test s.p2.coords[2] == 4.0
     end
 
     @testset "Constructor_2" begin
         s = Segment(1.0, 2.0, 3.0, 4.0)
 
-        @test s.p1.x == 1.0
-        @test s.p1.y == 2.0
-        @test s.p2.x == 3.0
-        @test s.p2.y == 4.0
+        @test s.p1.coords[1] == 1.0
+        @test s.p1.coords[2] == 2.0
+        @test s.p2.coords[1] == 3.0
+        @test s.p2.coords[2] == 4.0
     end
 
     @testset "length" begin

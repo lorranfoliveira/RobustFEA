@@ -1,22 +1,17 @@
 mutable struct Point
-    x::Float64
-    y::Float64
+    coords::Vector{Float64}
 
     function Point(x::Float64, y::Float64)
-        new(x, y)
+        new([x, y])
     end
-
     function Point()
-        new(0.0, 0.0)
+        new([0.0, 0.0])
     end
 end
 
-Δx(p1::Point, p2::Point) = p2.x - p1.x 
-
-Δy(p1::Point, p2::Point) = p2.y - p1.y
+Δcoords(p1::Point, p2::Point) = p2.coords - p1.coords 
 
 function distance(p1::Point, p2::Point)
-    dx = Δx(p1, p2)
-    dy = Δy(p1, p2)
-    return sqrt(dx * dx + dy * dy)
+    d_coords = Δcoords(p1, p2)
+    return sqrt(sum(d_coords .* d_coords))
 end
