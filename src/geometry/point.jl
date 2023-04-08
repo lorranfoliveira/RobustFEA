@@ -1,3 +1,5 @@
+using LinearAlgebra
+
 export Point, distance, Δcoords
 
 mutable struct Point
@@ -14,6 +16,5 @@ end
 Δcoords(p1::Point, p2::Point) = p2.coords - p1.coords 
 
 function distance(p1::Point, p2::Point)
-    d_coords = Δcoords(p1, p2)
-    return sqrt(sum(d_coords .* d_coords))
+    return norm(Δcoords(p1, p2))
 end
