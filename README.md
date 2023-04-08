@@ -1,2 +1,2 @@
 # RobustFEA
- Finite Element Analysis Framework
+Robust topology optimization framework
