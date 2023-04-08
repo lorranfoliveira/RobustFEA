@@ -1,24 +1,23 @@
+using LinearAlgebra
+
+export Force, resultant, angle
+
 mutable struct Force
-    fx::Float64
-    fy::Float64
+    forces::Vector{Float64}
 
     function Force(fx::Float64, fy::Float64)
-        new(fx, fy)
+        new([fx, fy])
     end
 
     function Force()
-        new(0.0, 0.0)
-    end
-
-    function Force(force::Float64, angle::Float64)
-        new(force * cos(angle), force * sin(angle))
+        new([0.0, 0.0])
     end
 end
 
 function resultant(force::Force)
-    return sqrt(force.fx * force.fx + force.fy * force.fy)
+    return norm(force.forces)
 end
 
 function angle(force::Force)
-    return atan(force.fy, force.fx)
+    return atan(force.forces[2], force.forces[1])
 end
