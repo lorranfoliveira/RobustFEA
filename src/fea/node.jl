@@ -32,9 +32,9 @@ distance(node1::Node, node2::Node)::Float64 = distance(node1.position, node2.pos
 """
 Returns the variation in coordinates between two nodes.
 """
-dofs(node::Node)::Vector{Float64} = [2 * node.id - 1, 2 * node.id]
+dofs(node::Node)::Vector{Int64} = [2 * node.id - 1, 2 * node.id]
 
 """
 Returns the variation in coordinates between two nodes.
 """
-free_dofs(node::Node)::Vector{Float64} = [d for (d, c) in zip(dofs(node), node.constraint.dofs) if c]
+free_dofs(node::Node)::Vector{Int64} = [d for (d, c) in zip(dofs(node), node.constraint.dofs) if c]
