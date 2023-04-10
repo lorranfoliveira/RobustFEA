@@ -1,4 +1,5 @@
 include("../geometry/geometry.jl")
+include("constraint.jl")
 
 mutable struct Node
     id::Int64
@@ -11,6 +12,8 @@ mutable struct Node
     end
 end
 
-distance(node1::Node, node2::Node) = distance(node1.position, node2.position)
+distance(node1::Node, node2::Node)::Float64 = distance(node1.position, node2.position)
 
-dof(node::Node)::Vector{Float64} = [2 * id - 1, 2 * id]
+dofs(node::Node)::Vector{Float64} = [2 * node.id - 1, 2 * node.id]
+
+free_dofs(node::Node)::Vector{Float64} = [d for (d, c) in zip(dofs(node), node.constraint.dofs) if c]

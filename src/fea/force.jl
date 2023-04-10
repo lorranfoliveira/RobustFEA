@@ -1,7 +1,5 @@
 using LinearAlgebra
 
-export Force, resultant, angle
-
 mutable struct Force
     forces::Vector{Float64}
 

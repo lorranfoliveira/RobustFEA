@@ -1,7 +1,5 @@
 using LinearAlgebra
 
-export Point, distance, Δcoords
-
 mutable struct Point
     coords::Vector{Float64}
 

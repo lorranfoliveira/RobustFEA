@@ -1,5 +1,3 @@
-export Constraint, is_free
-
 mutable struct Constraint
     dofs::Vector{Bool}
 
