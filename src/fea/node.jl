@@ -1,5 +1,6 @@
 include("../geometry/geometry.jl")
 include("constraint.jl")
+include("force.jl")
 
 """
 Defines a node in 2D space.
@@ -37,4 +38,4 @@ dofs(node::Node)::Vector{Int64} = [2 * node.id - 1, 2 * node.id]
 """
 Returns the variation in coordinates between two nodes.
 """
-free_dofs(node::Node)::Vector{Int64} = [d for (d, c) in zip(dofs(node), node.constraint.dofs) if c]
+free_dofs(node::Node)::Vector{Int64} = [d for (d, c) in zip(dofs(node), node.constraint.dofs) if !c]
