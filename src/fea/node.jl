@@ -1,16 +1,22 @@
 using LinearAlgebra
 
 """
-Defines a node in 2D space.
+Defines a node for use in the finite element method.
 
 # Fields
-- `id::Int64`: The id of the node.
-- `position::Point`: The position of the node.
-- `force::Force`: The force applied to the node.
-- `constraint::Constraint`: The constraint applied to the node.
+- `id::Int64`: The node id.
+- `position::Vector{Float64}`: The position of the node.
+- `force::Vector{Float64}`: The force applied to the node.
+- `constraint::Vector{Bool}`: The constraint applied to the node.
 
 # Constructors
-- `Node(id::Int64, position::Point, force::Force, constraint::Constraint)`: Creates a new node with the given id, position, force and constraint.
+- `Node(id::Int64, position::Vector{Float64}, force::Vector{Float64}, constraint::Vector{Bool})`: Creates a new node with the given id, position, force, and constraint.
+
+# Errors
+- `Position must be a 2D vector`: The position must be a 2D vector.
+- `Force must be a 2D vector`: The force must be a 2D vector.
+- `Constraint must be a 2D vector`: The constraint must be a 2D vector.
+- `Id must be a positive integer`: The id must be a positive integer.
 """
 mutable struct Node
     id::Int64
