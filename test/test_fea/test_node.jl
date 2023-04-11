@@ -1,25 +1,28 @@
 include("../../src/fea/node.jl")
 using Test
 
-
 # Test
 @testset "Node" begin
-    @testset "resultant_force" begin
-        node = Node(1, Point(0.0, 0.0), Force(1.0, 1.0), Constraint())
-        @test resultant(node.force) == sqrt(2.0)
+    @testset "Constructor" begin
+        @test_throws ArgumentError Node(0, [0.0, 0.0], [0.0, 0.0], [false, false])
+        @test_throws ArgumentError Node(1, [0.0], [0.0, 0.0], [false, false])
+        @test_throws ArgumentError Node(1, [0.0, 0.0], [0.0], [false, false])
+        @test_throws ArgumentError Node(1, [0.0, 0.0], [0.0, 0.0], [false])
     end
 
     @testset "distance" begin
-        node1 = Node(1, Point(0.0, 0.0), Force(), Constraint())
-        node2 = Node(2, Point(1.0, 1.0), Force(), Constraint())
-        @test distance(node1, node2) == sqrt(2.0)
+        node1 = Node(1, [0.0, 0.0], [0.0, 0.0], [false, false])
+        node2 = Node(2, [1.0, 1.0], [0.0, 0.0], [false, false])
+        @test distance(node1, node2) == 1.4142135623730951
     end
+
     @testset "dofs" begin
-        node = Node(1, Point(0.0, 0.0), Force(), Constraint())
-        @test dofs(node) == [1, 2]
+        node = Node(2, [0.0, 0.0], [0.0, 0.0], [false, false])
+        @test dofs(node) == [3, 4]
     end
+
     @testset "free_dofs" begin
-        node = Node(1, Point(0.0, 0.0), Force(), Constraint())
-        @test free_dofs(node) == [1, 2]
+        node = Node(1, [0.0, 0.0], [0.0, 0.0], [true, false])
+        @test free_dofs(node) == [2]
     end
 end
