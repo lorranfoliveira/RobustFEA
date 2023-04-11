@@ -40,6 +40,10 @@ include("../../src/fea/fea.jl")
         @test forces(element) == [0.0, 0.0, 10.0, -5.0]
     end
 
+    @testset "free_forces" begin
+        @test free_forces(element) == [10.0, -5.0]
+    end
+
     @testset "volume" begin 
         @test volume(element) ≈ 0.0014*2.8284271247461903
     end
