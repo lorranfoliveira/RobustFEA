@@ -5,8 +5,8 @@ include("../../src/fea/fea.jl")
 @testset verbose=true "Element" begin
     # Nodes
     nodes = [
-        Node(1, [1.0, -1.0], [0.0, 0.0], [true, true]),
-        Node(5, [3.0, 1.0], [10.0, -5.0], [false, false])
+        Node(1, [1.0, -1.0]; constraint=[true, true]),
+        Node(5, [3.0, 1.0]; forces=[10.0, -5.0])
         ]
     
     element = Element(2, 0.0014, [nodes[1], nodes[2]], Material(1, 100e6))

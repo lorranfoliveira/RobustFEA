@@ -24,7 +24,7 @@ mutable struct Node
     forces::Vector{Float64}
     constraint::Vector{Bool}
 
-    function Node(id::Int64, position::Vector{Float64}, forces::Vector{Float64}, constraint::Vector{Bool})
+    function Node(id::Int64, position::Vector{Float64}; forces::Vector{Float64}=[0.0, 0.0], constraint::Vector{Bool}=[false, false])
         if length(position) != 2
             throw(ArgumentError("Position must be a 2D vector."))
         end
