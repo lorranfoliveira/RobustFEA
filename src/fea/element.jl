@@ -55,9 +55,9 @@ Return the degrees of freedom of the element.
 dofs(element::Element)::Vector{Int64} = [dof for node in element.nodes for dof in dofs(node)]
 
 """
-Returns the element force vector.
+Returns the element force vector including those of constrined degrees of freedom.
 """
-forces(element::Element)::Vector{Float64} = [f for node in element.nodes for f in node.force]
+forces(element::Element)::Vector{Float64} = [force for node in element.nodes for force in node.forces]
 
 """
 Returns the free degrees of freedom of the element.

@@ -25,4 +25,9 @@ using Test
         node = Node(1, [0.0, 0.0], [0.0, 0.0], [true, false])
         @test free_dofs(node) == [2]
     end
+
+    @testset "free_forces" begin
+        node = Node(3, [0.0, 0.0], [10.0, 5.0], [true, false])
+        @test free_forces(node) == [5.0]
+    end
 end

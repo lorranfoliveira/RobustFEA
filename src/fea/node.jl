@@ -21,15 +21,15 @@ Defines a node for use in the finite element method.
 mutable struct Node
     id::Int64
     position::Vector{Float64}
-    force::Vector{Float64}
+    forces::Vector{Float64}
     constraint::Vector{Bool}
 
-    function Node(id::Int64, position::Vector{Float64}, force::Vector{Float64}, constraint::Vector{Bool})
+    function Node(id::Int64, position::Vector{Float64}, forces::Vector{Float64}, constraint::Vector{Bool})
         if length(position) != 2
             throw(ArgumentError("Position must be a 2D vector."))
         end
 
-        if length(force) != 2
+        if length(forces) != 2
             throw(ArgumentError("Force must be a 2D vector."))
         end
 
@@ -41,7 +41,7 @@ mutable struct Node
             throw(ArgumentError("Id must be a positive integer."))
         end
 
-        new(id, position, force, constraint)
+        new(id, position, forces, constraint)
     end
 end
 
@@ -59,3 +59,8 @@ dofs(node::Node)::Vector{Int64} = [2 * node.id - 1, 2 * node.id]
 Returns the variation in coordinates between two nodes.
 """
 free_dofs(node::Node)::Vector{Int64} = [d for (d, c) in zip(dofs(node), node.constraint) if !c]
+
+"""
+Returns the forces of the free degrees of freedom.
+"""
+free_forces(node::Node)::Vector{Float64} = [force for (force, c) in zip(node.forces, node.constraint) if !c]
