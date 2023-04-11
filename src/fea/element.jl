@@ -65,6 +65,11 @@ Returns the free degrees of freedom of the element.
 free_dofs(element::Element)::Vector{Int64} = [dof for node in element.nodes for dof in free_dofs(node)]
 
 """
+Returns the element volume.
+"""
+volume(element::Element)::Float64 = element.area * len(element)
+
+"""
 Returns the angle (radians) between the element and the x-axis.
 """
 function angle(element::Element)::Float64
