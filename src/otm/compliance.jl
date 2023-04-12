@@ -4,7 +4,6 @@ using LinearAlgebra,
 
 
 mutable struct Compliance
-    
     structure::Structure
 end
 
@@ -26,4 +25,8 @@ function H(compliance::Compliance)
     end
 
     return h
+end
+
+function Z(compliance::Compliance)
+    return stiffness_matrix(compliance.structure) \ H(compliance)
 end
