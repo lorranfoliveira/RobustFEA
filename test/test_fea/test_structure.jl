@@ -43,6 +43,10 @@ using Test
     @testset "free_dofs" begin
         @test free_dofs(structure) == [3, 4, 5, 6, 9, 10, 11, 12]
     end
+
+    @testset "free_loaded_dofs" begin
+        @test free_loaded_dofs(structure) == [9, 10]
+    end
     
     @testset "free_forces" begin
         @test free_forces(structure) == [0.0, 0.0, 0.0, 0.0, 10.0, -5.0, 0.0, 0.0]

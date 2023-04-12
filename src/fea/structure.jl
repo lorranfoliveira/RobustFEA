@@ -76,12 +76,25 @@ end
 """
 Returns the number of degrees of freedom for the given structure.
 """
-number_of_dofs(structure::Structure)::Int64 = return 2 * length(structure.nodes)
+number_of_dofs(structure::Structure)::Int64 = 2 * length(structure.nodes)
 
 """
 Returns the free degrees of freedom for the given structure.
 """
-free_dofs(structure::Structure)::Vector{Int64} = return [dof for node in structure.nodes for dof in free_dofs(node)]
+free_dofs(structure::Structure)::Vector{Int64} = [dof for node in structure.nodes for dof in free_dofs(node)]
+
+"""
+Returns the free and loaded degrees of freedom for the given structure.
+"""
+function free_loaded_dofs(structure::Structure)::Vector{Int64}
+    ld_dofs::Vector{Int64} = []
+
+    for node in structure.nodes
+        ld_dofs = vcat(ld_dofs, free_loaded_dofs(node))
+    end
+
+    return ld_dofs
+end
 
 """
 Returns the volume of the given structure.
