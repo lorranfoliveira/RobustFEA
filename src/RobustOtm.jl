@@ -1,7 +1,11 @@
 module RobustFEA
 
-include("geometry/geometry.jl")
+include("fea/fea.jl")
+
+# Point
 export Point, distance, Δcoords
-export Segment, length, cos, sin, angle
+
+# node
+export Node, distance, dofs, free_dofs
 
 end
