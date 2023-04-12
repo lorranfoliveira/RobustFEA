@@ -64,3 +64,19 @@ free_dofs(node::Node)::Vector{Int64} = [d for (d, c) in zip(dofs(node), node.con
 Returns the forces of the free degrees of freedom.
 """
 free_forces(node::Node)::Vector{Float64} = [force for (force, c) in zip(node.forces, node.constraint) if !c]
+
+"""
+Returns the free degrees of freedom that are loaded.
+"""
+function free_loaded_dofs(node::Node)::Vector{Int64}
+    ld_dofs::Vector{Int64} = []
+    f_dofs::Vector{Int64} = free_dofs(node)
+
+    for (force, dof) in zip(node.forces, dofs(node))
+        if force != 0.0 && dof in f_dofs
+            push!(ld_dofs, dof)
+        end
+    end
+
+    return ld_dofs
+end

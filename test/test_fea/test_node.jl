@@ -30,4 +30,13 @@ using Test
         node = Node(3, [0.0, 0.0]; forces=[10.0, 5.0], constraint=[true, false])
         @test free_forces(node) == [5.0]
     end
+
+    @testset "free_loaded_dofs" begin
+        node1 = Node(1, [0.0, 0.0]; forces=[10.0, 5.0], constraint=[true, false])
+        node2 = Node(2, [0.0, 0.0]; forces=[0.0, 5.0], constraint=[true, true])
+        node3 = Node(3, [0.0, 0.0]; forces=[10.0, 0.0], constraint=[false, true])
+        @test free_loaded_dofs(node1) == [2]
+        @test free_loaded_dofs(node2) == []
+        @test free_loaded_dofs(node3) == [5]
+    end
 end
