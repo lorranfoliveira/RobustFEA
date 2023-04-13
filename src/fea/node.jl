@@ -74,11 +74,12 @@ function dofs(node::Node; include_restricted::Bool=false, local_dofs::Bool=false
 end
 
 """
-Returns the restricted degrees of freedom.
+Returns true if the degree of freedom is loaded.
 """
-function restricted_dofs(node::Node; local_dofs::Bool=false)::Vector{Int64}
-    return setdiff(dofs(node; include_restricted=true, local_dofs=local_dofs),
-                   dofs(node; include_restricted=false, local_dofs=local_dofs))
+function free_loaded_dofs(node::Node; local_dofs::Bool=false)::Vector{Int64}
+    r::Vector{Int64} = dofs(node; include_restricted=true, local_dofs=local_dofs)
+    cond::Vector{Bool} = @. node.constraint == false && node.force .!= 0.0
+    return r[cond]
 end
 
 """

@@ -81,19 +81,31 @@ number_of_dofs(structure::Structure)::Int64 = 2 * length(structure.nodes)
 """
 Returns the free degrees of freedom for the given structure.
 """
-free_dofs(structure::Structure)::Vector{Int64} = [dof for node in structure.nodes for dof in free_dofs(node)]
 
-"""
-Returns the free and loaded degrees of freedom for the given structure.
-"""
-function free_loaded_dofs(structure::Structure)::Vector{Int64}
-    ld_dofs::Vector{Int64} = []
+constraint(structure::Structure) = [c for node in structure.nodes for c in node.constraint]
 
-    for node in structure.nodes
-        ld_dofs = vcat(ld_dofs, free_loaded_dofs(node))
+function restricted_dofs(structure::Structure; local_dofs::Bool=false)::Vector{Int64}
+    return dofs(structure; include_restricted=true, local_dofs=local_dofs)[constraint(structure) .== true]
+end
+
+function dofs(structure::Structure; include_restricted::Bool=false, local_dofs::Bool=false)::Vector{Int64}
+    r::Vector{Int64} = []
+
+    if local_dofs
+        r = Vector(1:number_of_dofs(structure))
+    else
+        r = [dof for node in structure.nodes for dof in dofs(node, include_restricted=true)]
     end
 
-    return ld_dofs
+    return include_restricted ? r : r[constraint(structure) .== false]
+end
+
+function loaded_dofs(structure::Structure)
+    
+end
+
+function free_loaded_dofs(structure::Structure; local_dofs=false)::Vector{Int64}
+    return [dof for node in structure.nodes for dof in free_loaded_dofs(node, local_dofs=local_dofs)]
 end
 
 """
@@ -104,23 +116,25 @@ volume(structure::Structure)::Float64 = sum([volume(element) for element in stru
 """
 Returns the mass matrix for the given structure.
 """
-free_forces(structure::Structure)::Vector{Float64} = [force for node in structure.nodes for force in free_forces(node)]
+function forces(structure::Structure; include_restricted::Bool=false, exclude_zeros::Bool=false)::Vector{Float64} 
+    return [force for node in structure.nodes for force in forces(node, include_restricted=include_restricted, exclude_zeros=exclude_zeros)]
+end
 
 """
 Returns the stiffness matrix for the given structure.
 
 TODO: This is a naive implementation. It should be improved.
 """
-function stiffness_matrix(structure::Structure)::Matrix{Float64}
+function K(structure::Structure)::Matrix{Float64}
     n::Int64 = number_of_dofs(structure)
     k::SparseMatrixCSC{Float64} = spzeros(n, n)
 
     for element in structure.elements
-        dofs_el::Vector{Int64} = dofs(element)
-        k[dofs_el, dofs_el] += stiffness_global(element)
+        dofs_el::Vector{Int64} = dofs(element, include_restricted=true)
+        k[dofs_el, dofs_el] += K(element)
     end
 
-    f_dof = free_dofs(structure)
+    f_dof = dofs(structure)
     k_free = k[f_dof, f_dof]
     dropzeros!(k_free)
 
@@ -134,4 +148,4 @@ end
 """
 Returns the displacements for the given structure.
 """
-displacements(structure::Structure) = stiffness_matrix(structure) \ free_forces(structure)
+u(structure::Structure) = K(structure) \ forces(structure)

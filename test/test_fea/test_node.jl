@@ -42,18 +42,18 @@ using Test
         @test dofs(node4, include_restricted=true, local_dofs=true) == [1, 2]
     end
 
-    @testset "restricted_dofs" begin
-        node1 = Node(2, [0.0, 0.0]; constraint=[true, false])
-        @test restricted_dofs(node1) == [3]
-        @test restricted_dofs(node1, local_dofs=true) == [1]
-        
-        node2 = Node(3, [0.0, 0.0]; constraint=[false, true])
-        @test restricted_dofs(node2) == [6]
-        @test restricted_dofs(node2, local_dofs=true) == [2]
+    @testset "free_loaded_dofs" begin
+        node1 = Node(2, [0.0, 0.0]; force=[5.0, 0.0], constraint=[false, false])
+        @test free_loaded_dofs(node1) == [3]
 
-        node3 = Node(3, [0.0, 0.0]; constraint=[true, true])
-        @test restricted_dofs(node3) == [5, 6]
-        @test restricted_dofs(node3, local_dofs=true) == [1, 2]
+        node2 = Node(3, [0.0, 0.0]; force=[0.0, 0.0], constraint=[false, false])
+        @test free_loaded_dofs(node2) == []
+
+        node3 = Node(3, [0.0, 0.0]; force=[0.0, 0.0], constraint=[false, true])
+        @test free_loaded_dofs(node3) == []
+
+        node4 = Node(3, [0.0, 0.0]; force=[0.0, 5.0], constraint=[false, false])
+        @test free_loaded_dofs(node4) == [6]
     end
 
     @testset "forces" begin

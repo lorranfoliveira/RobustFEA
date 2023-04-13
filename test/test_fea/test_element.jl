@@ -6,7 +6,7 @@ include("../../src/fea/fea.jl")
     # Nodes
     nodes = [
         Node(1, [1.0, -1.0]; constraint=[true, true]),
-        Node(5, [3.0, 1.0]; forces=[10.0, -5.0])
+        Node(5, [3.0, 1.0]; force=[10.0, -5.0])
         ]
     
     element = Element(2, 0.0014, [nodes[1], nodes[2]], Material(1, 100e6))
@@ -32,16 +32,35 @@ include("../../src/fea/fea.jl")
         @test len(element) ≈ 2.8284271247461903
     end
 
+    @testset "constraint" begin
+        @test constraint(element) == [true, true, false, false]
+
+        element2 = Element(2, 0.0014, [nodes[2], nodes[1]], Material(1, 100e6))
+        @test constraint(element2) == [false, false, true, true]
+    end
+
+    @testset "free_loaded_dofs" begin
+        @test free_loaded_dofs(element) == [9, 10]
+        @test free_loaded_dofs(element, local_dofs=true) == [3, 4]
+
+        element2 = Element(2, 0.0014, [nodes[2], nodes[1]], Material(1, 100e6))
+        @test free_loaded_dofs(element2) == [9, 10]
+        @test free_loaded_dofs(element2, local_dofs=true) == [1, 2]
+    end
+
     @testset "dofs" begin
-        @test dofs(element) == [1, 2, 9, 10]
+        @test dofs(element, include_restricted=true) == [1, 2, 9, 10]
+        @test dofs(element, include_restricted=true, local_dofs=true) == [1, 2, 3, 4]
+        @test dofs(element, include_restricted=false) == [9, 10]
+        @test dofs(element, include_restricted=false, local_dofs=true) == [3, 4]
     end
 
     @testset "forces" begin
-        @test forces(element) == [0.0, 0.0, 10.0, -5.0]
-    end
-
-    @testset "free_forces" begin
-        @test free_forces(element) == [10.0, -5.0]
+        @test forces(element) == [10.0, -5.0]
+        @test forces(element, include_restricted=true) == [0.0, 0.0, 10.0, -5.0]
+        @test forces(element, include_restricted=false) == [10.0, -5.0]
+        @test forces(element, include_restricted=false, exclude_zeros=true) == [10.0, -5.0]
+        @test forces(element, include_restricted=true, exclude_zeros=true) == [10.0, -5.0]
     end
 
     @testset "volume" begin 
@@ -61,8 +80,8 @@ include("../../src/fea/fea.jl")
         ]
     end
 
-    @testset "stiffness_local" begin
-        @test stiffness_local(element) ≈ [
+    @testset "K_local" begin
+        @test K_local(element) ≈ [
                 49497.474683058324 0 -49497.474683058324 0
                 0 0 0 0
                 -49497.474683058324 0 49497.474683058324 0
@@ -70,8 +89,8 @@ include("../../src/fea/fea.jl")
             ]
     end
 
-    @testset "stiffness_global" begin
-        @test stiffness_global(element) ≈ [
+    @testset "K" begin
+        @test K(element) ≈ [
             24748.737341529166 24748.737341529162 -24748.737341529166 -24748.737341529162
             24748.73734152916 24748.737341529155 -24748.73734152916 -24748.737341529155
             -24748.737341529166 -24748.737341529162 24748.737341529166 24748.737341529162

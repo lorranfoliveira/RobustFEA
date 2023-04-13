@@ -49,25 +49,43 @@ Returns the element length.
 """
 len(element::Element)::Float64 = distance(element.nodes...)
 
+constraint(element::Element) = vcat(element.nodes[1].constraint, element.nodes[2].constraint)
+
+function free_loaded_dofs(element::Element; local_dofs::Bool=false)
+    cond::Vector{Bool} = .!constraint(element) .&& forces(element, include_restricted=true) .!= 0.0
+    return dofs(element, include_restricted=true, local_dofs=local_dofs)[cond]
+end
+
 """
 Return the degrees of freedom of the element.
+
+# Arguments
+- `include_restricted::Bool=false`: If true, returns the degrees of freedom of the element including those of constrained nodes.
+- `local_dofs::Bool=false`: If true, returns the local degrees of freedom of the element.
 """
-dofs(element::Element)::Vector{Int64} = [dof for node in element.nodes for dof in dofs(node)]
+function dofs(element::Element; include_restricted::Bool=false, local_dofs::Bool=false)::Vector{Int64}
+    r::Vector{Int64} = []
+
+    if local_dofs
+        r = Vector(1:4)
+    else
+        r = [dof for node in element.nodes for dof in dofs(node, include_restricted=true)]
+    end
+
+    return include_restricted ? r : r[constraint(element) .== false]
+end
+
 
 """
 Returns the element force vector including those of constrined degrees of freedom.
-"""
-forces(element::Element)::Vector{Float64} = [force for node in element.nodes for force in node.forces]
 
+# Arguments
+- `include_restricted::Bool=false`: If true, returns the force vector including those of constrained degrees of freedom.
+- `exclude_zeros::Bool=false`: If true, returns the force vector excluding those of zero values.
 """
-Returns the element force vector excluding those of constrined degrees of freedom.
-"""
-free_forces(element::Element)::Vector{Float64} = [force for node in element.nodes for force in free_forces(node)]
-
-"""
-Returns the free degrees of freedom of the element.
-"""
-free_dofs(element::Element)::Vector{Int64} = [dof for node in element.nodes for dof in free_dofs(node)]
+function forces(element::Element; include_restricted::Bool=false, exclude_zeros::Bool=false)::Vector{Float64}
+    return [f for node in element.nodes for f in forces(node, include_restricted=include_restricted, exclude_zeros=exclude_zeros)]
+end
 
 """
 Returns the element volume.
@@ -99,7 +117,7 @@ end
 """
 Returns the element local stiffness matrix.
 """
-function stiffness_local(element::Element)::Matrix{Float64}
+function K_local(element::Element)::Matrix{Float64}
     l = len(element)
     e = element.material.young
     a = element.area
@@ -113,9 +131,9 @@ end
 """
 Returns the element global stiffness matrix.
 """
-function stiffness_global(element::Element)::Matrix{Float64}
+function K(element::Element)::Matrix{Float64}
     r = rotation_matrix(element)
-    kl = stiffness_local(element)
+    kl = K_local(element)
 
     return r' * kl * r
 end

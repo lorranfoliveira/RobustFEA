@@ -8,7 +8,7 @@ using Test
         Node(2, [3.0, -1.0]),
         Node(3, [5.0, -1.0]),
         Node(4, [7.0, -1.0]; constraint=[true, true]),
-        Node(5, [3.0, 1.0]; forces=[10.0, -5.0]),
+        Node(5, [3.0, 1.0]; force=[10.0, -5.0]),
         Node(6, [5.0, 1.0])
     ]
 
@@ -40,19 +40,27 @@ using Test
         @test number_of_dofs(structure) == 12
     end
 
-    @testset "free_dofs" begin
-        @test free_dofs(structure) == [3, 4, 5, 6, 9, 10, 11, 12]
+    @testset "constraint" begin
+        @test constraint(structure) == [true, true, false, false, false, false, true, true, false, false, false, false]
+    end
+
+    @testset "dofs" begin
+        @test dofs(structure) == [3, 4, 5, 6, 9, 10, 11, 12]
+        @test dofs(structure, include_restricted=true) == Vector(1:12)
     end
 
     @testset "free_loaded_dofs" begin
         @test free_loaded_dofs(structure) == [9, 10]
     end
     
-    @testset "free_forces" begin
-        @test free_forces(structure) == [0.0, 0.0, 0.0, 0.0, 10.0, -5.0, 0.0, 0.0]
+    @testset "forces" begin
+        @test forces(structure) == [0.0, 0.0, 0.0, 0.0, 10.0, -5.0, 0.0, 0.0]
+        @test forces(structure, include_restricted=true) == [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, -5.0, 0.0, 0.0]
+        @test forces(structure, exclude_zeros=true) == [10.0, -5.0]
+        @test forces(structure, include_restricted=true, exclude_zeros=true) == [10.0, -5.0]
     end
 
-    @testset "stiffness_matrix" begin
+    @testset "K" begin
         kt = sparse(
             [
                 164748.73734152917 24748.73734152916 -70000.0 0.0 -2.624579619658251e-28 4.2862637970157364e-12 -24748.737341529166 -24748.737341529162
@@ -66,11 +74,11 @@ using Test
             ],
         )
 
-        @test stiffness_matrix(structure) ≈ kt
+        @test K(structure) ≈ kt
     end
 
-    @testset "displacements" begin
-        @test displacements(structure) ≈ [
+    @testset "u" begin
+        @test u(structure) ≈ [
             4.761904761904763e-5,
             -0.00019817906943235845,
             2.3809523809523814e-5,
