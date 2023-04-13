@@ -21,15 +21,15 @@ Defines a node for use in the finite element method.
 mutable struct Node
     id::Int64
     position::Vector{Float64}
-    forces::Vector{Float64}
+    force::Vector{Float64}
     constraint::Vector{Bool}
 
-    function Node(id::Int64, position::Vector{Float64}; forces::Vector{Float64}=[0.0, 0.0], constraint::Vector{Bool}=[false, false])
+    function Node(id::Int64, position::Vector{Float64}; force::Vector{Float64}=[0.0, 0.0], constraint::Vector{Bool}=[false, false])
         if length(position) != 2
             throw(ArgumentError("Position must be a 2D vector."))
         end
 
-        if length(forces) != 2
+        if length(force) != 2
             throw(ArgumentError("Force must be a 2D vector."))
         end
 
@@ -41,7 +41,7 @@ mutable struct Node
             throw(ArgumentError("Id must be a positive integer."))
         end
 
-        new(id, position, forces, constraint)
+        new(id, position, force, constraint)
     end
 end
 
@@ -51,32 +51,45 @@ Returns the distance between two nodes.
 distance(node1::Node, node2::Node)::Float64 = norm(node2.position - node1.position)
 
 """
-Returns the variation in coordinates between two nodes.
-"""
-dofs(node::Node)::Vector{Int64} = [2 * node.id - 1, 2 * node.id]
+Returns the degrees of freedom.
 
+# Keyword Arguments
+- `include_restricted::Bool=false`: Whether to include the restricted degrees of freedom.
+- `local_dofs::Bool=false`: Whether to return the local degrees of freedom (1:number_of_dofs).
 """
-Returns the variation in coordinates between two nodes.
-"""
-free_dofs(node::Node)::Vector{Int64} = [d for (d, c) in zip(dofs(node), node.constraint) if !c]
+function dofs(node::Node; include_restricted::Bool=false, local_dofs::Bool=false)::Vector{Int64}
+    r::Vector{Int64} = []
 
-"""
-Returns the forces of the free degrees of freedom.
-"""
-free_forces(node::Node)::Vector{Float64} = [force for (force, c) in zip(node.forces, node.constraint) if !c]
-
-"""
-Returns the free degrees of freedom that are loaded.
-"""
-function free_loaded_dofs(node::Node)::Vector{Int64}
-    ld_dofs::Vector{Int64} = []
-    f_dofs::Vector{Int64} = free_dofs(node)
-
-    for (force, dof) in zip(node.forces, dofs(node))
-        if force != 0.0 && dof in f_dofs
-            push!(ld_dofs, dof)
-        end
+    if local_dofs
+        r = Vector(1:2)
+    else
+        r = [2 * node.id - 1, 2 * node.id]
     end
 
-    return ld_dofs
+    if include_restricted
+        return r
+    else
+        return r[node.constraint .== false]
+    end
+end
+
+"""
+Returns the restricted degrees of freedom.
+"""
+function restricted_dofs(node::Node; local_dofs::Bool=false)::Vector{Int64}
+    return setdiff(dofs(node; include_restricted=true, local_dofs=local_dofs),
+                   dofs(node; include_restricted=false, local_dofs=local_dofs))
+end
+
+"""
+Returns the forces of the degrees of freedom.
+"""
+function forces(node::Node; include_restricted::Bool=false, exclude_zeros::Bool=false)::Vector{Float64}
+    f::Vector{Float64} = node.force[dofs(node; include_restricted=include_restricted, local_dofs=true)]
+    
+    if exclude_zeros
+        return f[f .!= 0.0]
+    else
+        return f
+    end
 end
