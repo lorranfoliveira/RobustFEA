@@ -39,6 +39,18 @@ function diff_eigenvals(compliance::Compliance)
     return g
 end
 
+function obj(compliance::Compliance)::Float64
+    return max(compliance.eig_vals)
+end
+
+function obj_smooth(compliance::Compliance)::Float64
+    return norm(compliance.eig_vals, compliance.p)
+end
+
+function diff_obj(compliance::Compliance)
+    return 0.0
+end
+
 
 function diff_obj_smooth(compliance::Compliance)
     calculate_C_eigenvals_and_eigenvecs(compliance)
