@@ -10,19 +10,14 @@ end
 
 function H(compliance::Compliance)
     s = compliance.structure
-    # Free forces with zeros
-    all_forces = free_forces(s)
-    # Degrees of freedom of nonzero free forces
-    dof_nonzero_forces = free_loaded_dofs(s)
+    fl_dofs = free_loaded_dofs(s)
     
-    h = spzeros(length(all_forces), length(dof_nonzero_forces))
-
+    h = spzeros(number_of_dofs(s), length(fl_dofs))
+    
     c::Int64 = 1
-    for i in eachindex(all_forces)
-        if all_forces[i] != 0.0
-            h[i, c] = 1.0
-            c += 1
-        end
+    for i in fl_dofs
+        h[i, c] = 1.0
+        c += 1
     end
 
     return h
@@ -31,34 +26,41 @@ end
 function diff_K(element::Element)
     aux::Float64 = element.area
     element.area = 1.0
-    k = stiffness_global(element)
+    k = K(element)
     element.area = aux
     
     return k
 end
 
-function diff_K(compliance::Compliance)
+function diff_K(compliance::Compliance)::Vector{SparseMatrixCSC{Float64}}
     # TODO: Optimize this
     # TODO: Implement virtual_dofs (degrees of freedom for constrained stiffness matrix)
     # TODO: Change stiffness methods to K0
-    z = Z(compliance)
-
     g::Vector{SparseMatrixCSC{Float64}} = []
 
     for element in compliance.structure.elements
-        loc_dofs_el = free_local_dofs(element)
-        virt_dofs_el = virtual_dofs(element)
+        gi = spzeros(4, 4)
+        dofs_el_loc = dofs(element, include_restricted=true, local_dofs=true)
+        gi[dofs_el_loc, dofs_el_loc] = diff_K(element)[dofs_el_loc, dofs_el_loc]
 
-        z_el = z[virt_dofs_el,:]
-
-        diff_k_el = diff_K(element)[loc_dofs_el, loc_dofs_el]
-
-        push!(g, -z_el'*diff_k_el*z_el)
+        push!(g, gi)
     end
 
     return g
 end
 
 function Z(compliance::Compliance)
-    return stiffness_matrix(compliance.structure) \ H(compliance)
+    return K(compliance.structure, include_restricted=true) \ H(compliance)
+end
+
+function diff_C(compliance::Compliance)
+    g::Vector{Float64} = []
+    z::Matrix{Float64} = Z(compliance)
+
+    for element in compliance.structure.elements
+        ze::Vector{Float64} = z[dofs(element, include_restricted=true), :]
+        push!(g, -ze' * diff_K(element) * ze)
+    end
+
+    return g
 end

@@ -125,7 +125,7 @@ Returns the stiffness matrix for the given structure.
 
 TODO: This is a naive implementation. It should be improved.
 """
-function K(structure::Structure)::Matrix{Float64}
+function K(structure::Structure; include_restricted=false)::Matrix{Float64}
     n::Int64 = number_of_dofs(structure)
     k::SparseMatrixCSC{Float64} = spzeros(n, n)
 
@@ -134,15 +134,19 @@ function K(structure::Structure)::Matrix{Float64}
         k[dofs_el, dofs_el] += K(element)
     end
 
-    f_dof = dofs(structure)
-    k_free = k[f_dof, f_dof]
-    dropzeros!(k_free)
-
-    dg = nonzeros(diag(k_free)) 
-    λ = structure.tikhonov * (sum(dg) / length(dg))
-    k_free += λ * I
+    if !include_restricted
+        f_dof = dofs(structure)
+        k = k[f_dof, f_dof]
+    end
     
-    return k_free
+
+    dropzeros!(k)
+
+    dg = nonzeros(diag(k)) 
+    λ = structure.tikhonov * (sum(dg) / length(dg))
+    k += λ * I
+    
+    return k
 end
 
 """
