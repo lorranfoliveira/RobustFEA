@@ -68,6 +68,6 @@ include("../../src/fea/fea.jl")
                                             0.0 0.0 0.0 0.0])
     end
 
-    @testset "diff_K_structure" begin
+    #@testset "diff_K_structure" begin
         
 end 
