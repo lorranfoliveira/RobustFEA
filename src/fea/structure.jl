@@ -125,7 +125,7 @@ Returns the stiffness matrix for the given structure.
 
 TODO: This is a naive implementation. It should be improved.
 """
-function K(structure::Structure; include_restricted=false)::Matrix{Float64}
+function K(structure::Structure)::Matrix{Float64}
     n::Int64 = number_of_dofs(structure)
     k::SparseMatrixCSC{Float64} = spzeros(n, n)
 
@@ -134,11 +134,9 @@ function K(structure::Structure; include_restricted=false)::Matrix{Float64}
         k[dofs_el, dofs_el] += K(element)
     end
 
-    if !include_restricted
-        f_dof = dofs(structure)
-        k = k[f_dof, f_dof]
-    end
-    
+    cons::Vector{Bool} = constraint(structure)
+    k[cons, :] .= 0.0
+    k[:, cons] .= 0.0
 
     dropzeros!(k)
 
@@ -152,4 +150,4 @@ end
 """
 Returns the displacements for the given structure.
 """
-u(structure::Structure) = K(structure) \ forces(structure)
+u(structure::Structure) = K(structure) \ forces(structure, include_restricted=true)
