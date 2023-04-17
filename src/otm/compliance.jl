@@ -13,8 +13,10 @@ structure::Structure
 p::Float64
     p-norm parameter.
 compliance_type::Int64
-    1: Exact compliance.
-    2: Smoothed compliance.
+    0: Nominal compliance.
+    1: Worst-case with exact compliance.
+    2: Worst-case with p-norm smoothed compliance.
+    3: Worst-case with mu-smoothed compliance.
 eig_vals
     Eigenvalues of the C matrix.
 eig_vecs
@@ -28,7 +30,7 @@ mutable struct Compliance
     eig_vecs
 
     function Compliance(structure::Structure, compliance_type::Int64=1, p::Float64=5.0)
-        if compliance_type ∉ [1, 2]
+        if compliance_type ∉ [0, 1, 2, 3]
             error("Invalid compliance type.")
         end
 
