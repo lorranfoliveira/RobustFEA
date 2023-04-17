@@ -4,10 +4,8 @@ authors = ["Lorran Oliveira <lorranfoliveira@gmail.com>"]
 version = "0.1.0"
 
 [deps]
-Debugger = "31a5f54b-26ea-5ae9-a837-f05ce5417438"
-FiniteDifferences = "26cc04aa-876d-5657-8c51-4c34ba976000"
+GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 NearestNeighbors = "b8a86587-4115-5ab1-83bc-aa920d37bbce"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
