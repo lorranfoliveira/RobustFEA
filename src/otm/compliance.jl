@@ -6,10 +6,10 @@ using LinearAlgebra,
 mutable struct Compliance
     structure::Structure
     p::Float64
-    eig_vals::Vector{Float64}
-    eig_vecs::Matrix{Float64}
+    eig_vals
+    eig_vecs
 
-    function Compliance(structure::Structure, p::Float64=1.0)
+    function Compliance(structure::Structure, p::Float64=5.0)
         new(structure, p, [], [])
     end
 end
@@ -40,7 +40,7 @@ function diff_eigenvals(compliance::Compliance)
 end
 
 function obj(compliance::Compliance)::Float64
-    return max(compliance.eig_vals)
+    return maximum(compliance.eig_vals)
 end
 
 function obj_smooth(compliance::Compliance)::Float64
@@ -48,28 +48,16 @@ function obj_smooth(compliance::Compliance)::Float64
 end
 
 function diff_obj(compliance::Compliance)
-    return 0.0
+    return diff_eigenvals(compliance)[end, :]
 end
 
 
 function diff_obj_smooth(compliance::Compliance)
     calculate_C_eigenvals_and_eigenvecs(compliance)
 
-    num_eigvals::Int64 = length(compliance.eig_vals)
-    num_design_vars::Int64 = length(compliance.structure.elements)
+    df_pnorm::Vector{Float64} = (compliance.eig_vals .^ (compliance.p - 1)) / (norm(compliance.eig_vals, compliance.p) ^ (compliance.p - 1))
 
-    grad::Vector{Float64}(undef, num_design_vars)
-    grad_eigvals::Matrix{Float64} = diff_eigenvals(compliance)
-
-    cons::Float64 = (norm(compliance.eig_vals, compliance.p) ^ (compliance.p - 1))
-
-    for i=1:num_design_vars
-        for j=1:num_eigvals
-            grad[i] += grad_eigvals[i, j] * (compliance.eig_vals[j] ^ (compliance.p - 1)) / cons
-        end
-    end
-
-    return grad
+    return df_pnorm' * diff_eigenvals(compliance)
 end
 
 
@@ -116,7 +104,7 @@ function diff_C(compliance::Compliance)
     z::Matrix{Float64} = Z(compliance)
 
     for element in compliance.structure.elements
-        ze::Vector{Float64} = z[dofs(element, include_restricted=true), :]
+        ze::Matrix{Float64} = z[dofs(element, include_restricted=true), :]
         push!(g, -ze' * diff_K(element) * ze)
     end
 
