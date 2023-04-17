@@ -12,6 +12,9 @@ structure::Structure
     Structure object.
 p::Float64
     p-norm parameter.
+compliance_type::Int64
+    1: Exact compliance.
+    2: Smoothed compliance.
 eig_vals
     Eigenvalues of the C matrix.
 eig_vecs
@@ -19,12 +22,17 @@ eig_vecs
 """
 mutable struct Compliance
     structure::Structure
+    compliance_type::Int64
     p::Float64
     eig_vals
     eig_vecs
 
-    function Compliance(structure::Structure, p::Float64=5.0)
-        new(structure, p, [], [])
+    function Compliance(structure::Structure, compliance_type::Int64=1, p::Float64=5.0)
+        if compliance_type ∉ [1, 2]
+            error("Invalid compliance type.")
+        end
+
+        new(structure, compliance_type, p, [], [])
     end
 end
 
@@ -56,10 +64,11 @@ function diff_eigenvals(compliance::Compliance)
     return g
 end
 
+
 """
 Exact compliance.
 """
-function obj(compliance::Compliance)::Float64
+function obj_exact(compliance::Compliance)::Float64
     return maximum(compliance.eig_vals)
 end
 
@@ -70,10 +79,23 @@ function obj_smooth(compliance::Compliance)::Float64
     return norm(compliance.eig_vals, compliance.p)
 end
 
+# TODO: function obj_smooth_mu()
+
+"""
+Compliance.
+"""
+function obj(compliance::Compliance)::Float64
+    if compliance.compliance_type == 1
+        return obj_exact(compliance)
+    elseif compliance.compliance_type == 2
+        return obj_smooth(compliance)
+    end
+end
+
 """
 Derivative of the exact compliance with respect to the design variables.
 """
-function diff_obj(compliance::Compliance)
+function diff_obj_exact(compliance::Compliance)
     return diff_eigenvals(compliance)[end, :]
 end
 
@@ -85,6 +107,17 @@ function diff_obj_smooth(compliance::Compliance)
     df_pnorm::Vector{Float64} = (compliance.eig_vals .^ (compliance.p - 1)) / (norm(compliance.eig_vals, compliance.p) ^ (compliance.p - 1))
 
     return df_pnorm' * diff_eigenvals(compliance)
+end
+
+"""
+Derivative of the compliance with respect to the design variables.
+"""
+function diff_obj(compliance::Compliance)
+    if compliance.compliance_type == 1
+        return diff_obj_exact(compliance)
+    elseif compliance.compliance_type == 2
+        return diff_obj_smooth(compliance)
+    end
 end
 
 """
