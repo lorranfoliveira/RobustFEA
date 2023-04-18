@@ -1,4 +1,12 @@
 {
+    "materials":[
+        {
+            "id": 1,
+            "young": 1.0,
+            "poisson": 0.2
+        }
+    ],
+
     "nodes": [
         {
             "id": 1,
@@ -29,14 +37,6 @@
             "position": [0.0, -2.0],
             "forces": [0.0, 0.0],
             "constraint": [true, true]
-        }
-    ],
-
-    "materials":[
-        {
-            "id": 1,
-            "young": 1.0,
-            "poisson": 0.2
         }
     ],
 
