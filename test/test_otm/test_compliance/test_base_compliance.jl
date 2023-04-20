@@ -1,7 +1,7 @@
 using Test
 
-include("../../src/otm/otm.jl")
-include("../../src/fea/fea.jl")
+include("../../../src/otm/otm.jl")
+include("../../../src/fea/fea.jl")
 
 
 @testset verbose = true "Compliance" begin
@@ -28,10 +28,10 @@ include("../../src/fea/fea.jl")
 
         structure = Structure(nodes, elements)
 
-        compliance = Compliance(structure)
+        compliance = ComplianceSmoothPNorm(structure)
 
         @testset "H" begin
-            h = H(compliance)
+            h = H(compliance.base)
             r = spzeros(10, 2)
             r[5, 1] = 1.0
             r[6, 2] = 1.0
@@ -39,31 +39,26 @@ include("../../src/fea/fea.jl")
         end
 
         @testset "C" begin
-            @test C(compliance) ≈ [50.0 0.0
+            @test C(compliance.base) ≈ [50.0 0.0
                                 0.0 10.0]
         end
 
         @testset "diff_C" begin
-            @test diff_C(compliance) ≈ [[-4.686749292697808e-30 1.5308084934232806e-14; 1.5308084934232806e-14 -49.999999939999995], 
+            @test diff_C(compliance.base) ≈ [[-4.686749292697808e-30 1.5308084934232806e-14; 1.5308084934232806e-14 -49.999999939999995], 
                                         [-1249.9999924999997 0.0; 0.0 0.0], 
                                         [-1249.9999924999997 0.0; 0.0 0.0], 
                                         [-4.686749292697808e-30 -1.5308084934232806e-14; -1.5308084934232806e-14 -49.999999939999995]]
         end
 
         @testset "diff_eigenvals" begin
-            calculate_C_eigenvals_and_eigenvecs(compliance)
-            @test diff_eigenvals(compliance) ≈ [-49.999999939999995 0.0 0.0 -49.999999939999995; 
+            calculate_C_eigenvals_and_eigenvecs(compliance.base)
+            @test diff_eigenvals(compliance.base) ≈ [-49.999999939999995 0.0 0.0 -49.999999939999995; 
                                                 -4.686749292697808e-30 -1249.9999924999997 -1249.9999924999997 -4.686749292697808e-30]
         end
 
         @testset "diff_obj_smooth" begin
-            @test diff_obj_smooth(compliance) ≈ [-0.07997952656806127 -1249.6800846305637 -1249.6800846305637 -0.07997952656806127]
+            @test diff_obj(compliance) ≈ [-0.07997952656806127 -1249.6800846305637 -1249.6800846305637 -0.07997952656806127]
         end
-
-        @info "obj: $(obj(compliance))"
-        @info "diff_obj: $(diff_obj(compliance))"
-        @info "obj_smooth: $(obj_smooth(compliance))"
-        @info "diff_obj_smooth: $(diff_obj_smooth(compliance))"
     end
 
 
@@ -95,10 +90,10 @@ include("../../src/fea/fea.jl")
         
         structure = Structure(nodes, elements)
         
-        compliance = Compliance(structure)
+        compliance = ComplianceSmoothPNorm(structure)
         
         @testset "H" begin
-            h = H(compliance)
+            h = H(compliance.base)
             r = spzeros(12, 2)
             r[9, 1] = 1.0
             r[10, 2] = 1.0
@@ -107,7 +102,7 @@ include("../../src/fea/fea.jl")
         end
         
         @testset "Z" begin
-            @test Z(compliance) ≈ [0.0 0.0; 0.0 0.0; 
+            @test Z(compliance.base) ≈ [0.0 0.0; 0.0 0.0; 
                                 3.174603153408803e-6 -3.174603153408803e-6; 
                                 -4.232804175368175e-6 3.117020508780873e-5; 
                                 1.58730157543174e-6 -1.5873015754317396e-6; 
@@ -121,7 +116,7 @@ include("../../src/fea/fea.jl")
         end
         
         @testset "C" begin
-            @test C(compliance) ≈ [2.2463409500733556e-5 -8.99470891863221e-6; 
+            @test C(compliance.base) ≈ [2.2463409500733556e-5 -8.99470891863221e-6; 
                                 -8.994708918632213e-6 3.593210987426832e-5]
         end
         
