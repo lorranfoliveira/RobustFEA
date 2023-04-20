@@ -1,115 +1,143 @@
-include("compliance.jl")
+include("compliance/compliance.jl")
 
-struct Optimizer
-    compliance::Compliance
-    
+mutable struct Optimizer
+    # manual
+    compliance::T where T<:Compliance
+    volume_max::Float64
+    adaptive_move::Bool
+    max_iters::Int64
     x_min::Float64
+    tol::Float64
+
+    # automatic
     x_max::Float64
     x_init::Float64
-    
+    move::Vector{Float64}
+    iter::Int64
+    n::Int64
+
     x_k::Vector{Float64}
     x_km1::Vector{Float64}
     x_km2::Vector{Float64}
 
-    diff_obj_k::Vector{Float64}
-    diff_obj_km1::Vector{Float64}
-    diff_obj_km2::Vector{Float64}
+    df_obj_k::Vector{Float64}
 
-    volume_max::Float64
+    function Optimizer(compliance::T; volume_max::Float64=1.0, 
+                                      adaptive_move::Bool=true, 
+                                      max_iters::Int64=1000, 
+                                      x_min::Float64=0.0, 
+                                      tol::Float64=1e-6) where T<:Compliance
 
-    iter::Int64
-    adaptive_move::Bool
-    # TODO: Make this initial move as the mean of the initial areas (x_ini)
-    move::Vector{Float64}
-    tol::Float64
+        els_len = [len(el) for el in compliance.base.structure.elements]
+        n = length(compliance.base.structure.elements)
+
+        x_max =  volume_max / minimum(els_len)
+        x_init = volume_max / sum(els_len)
+        move = fill(x_init, n)
+        iter = 1
+
+        x_k = fill(x_init, n)
+        x_km1 = zeros(n)
+        x_km2 = zeros(n)
+
+        df_obj_k = zeros(n)
+
+        new(compliance, 
+            volume_max,
+            adaptive_move, 
+            max_iters, 
+            x_min, 
+            tol, 
+            x_max, 
+            x_init, 
+            move, 
+            iter, 
+            n, 
+            x_k, 
+            x_km1, 
+            x_km2, 
+            df_obj_k)
+    end
 end
 
-diff_vol(optimizer::Optimizer) = [len(el) for el in optimizer.compliance.structure.elements]
+get_areas(opt::Optimizer)::Vector{Float64} = [el.area for el in opt.compliance.base.structure.elements]
 
-function update_move!(optimizer::Optimizer)
-    x_k::Vector{Float64} = optimizer.x_k
-    x_km1::Vector{Float64} = optimizer.x_km1
-    x_km2::Vector{Float64} = optimizer.x_km2
-    x_init::Float64 = optimizer.x_init
+function set_areas(opt::Optimizer)
+    for i=eachindex(opt.compliance.base.structure.elements)
+        opt.compliance.base.structure.elements[i].area = opt.x_k[i]
+    end
+end
 
-    terms::Vector{Float64}(undef, length(x_k))
-    move_tmp::Vector{Float64} = compliance.move[:]
+diff_vol(opt::Optimizer) = [len(el) for el in opt.compliance.base.structure.elements]
 
-    if optimizer.iter > 2
-        terms = (x_k - x_km1) .* (x_km1 - x_km2)
-        for i=eachindex(terms)
-            if terms[i] < 0
-                move_tmp[i] = 0.9 * compliance.move[i]
-            elseif terms[i] > 0
-                move_tmp[i] = 1.1 * compliance.move[i]
-            end
+function update_move!(opt::Optimizer)
+    move_tmp = opt.move[:]
+
+    terms = (opt.x_k - opt.x_km1) .* (opt.x_km1 - opt.x_km2)
+    for i=eachindex(terms)
+        if terms[i] < 0
+            move_tmp[i] = 0.9 * opt.move[i]
+        elseif terms[i] > 0
+            move_tmp[i] = 1.1 * opt.move[i]
         end
-
-        compliance.move = max.(1e-4 * x_init, min.(move_tmp, 10 * x_init))
     end
+
+    opt.move = max.(1e-4 * opt.x_init, min.(move_tmp, 10 * opt.x_init))
 end
 
 
-function update_x!(optimizer::Optimizer)
-    n::Int64 = length(optimizer.compliance.structure.elements)
-    diff_obj::Vector{Float64} = diff_obj(optimizer.compliance)
-    vol::Float64 = volume(optimizer.compliance.structure)
-    diff_vol::Vector{Float64} = diff_vol(optimizer.compliance)
-    vol::Float64 = volume(optimizer.compliance.structure)
+function update_x!(opt::Optimizer)
+    df_vol = diff_vol(opt)
+    vol = volume(opt.compliance.base.structure)
+    opt.df_obj_k = diff_obj(opt.compliance)
 
-    if optimizer.adaptive_move
-        update_move!(optimizer)
+    if opt.adaptive_move && opt.iter > 2
+        update_move!(opt)
     end
 
-    if optimizer.iter ≤ 2
-        η = 0.5
-    else
-        ratio_diff_obj = @. abs(optimizer.diff_obj_km1 / optimizer.diff_obj_k)
-        ratio_x = @. (optimizer.x_km2 + optimizer.tol * x_ini) / (optimizer.x_km1 + optimizer.tol * x_ini)
-        a = @. 1 + log(ratio_diff_obj) / log(ratio_x)
-        a = max.(min.(map(v -> ifelse(v === NaN, 0, v), a), -0.1), -15)
-        η = @. 1 / (1 - a)
-    end
+    η = 0.5
 
-    bm::Vector{Float64} = -optimizer.diff_obj_k ./ diff_vol
-    be::Vector{Float64}(undef, n)
-    l1::Float64 = 0.0
-    l2::Float64 = 1.2 * maximum(bm)
-    lm::Float64 = 0.0
-    x_new::Vector{Float64}(undef, n)
+    bm = -opt.df_obj_k ./ df_vol
+    l1 = 0.0
+    l2 = 1.2 * maximum(bm)
+    x_new = zeros(opt.n)
 
-    while l2 - l1 > 1e-6
-        lm::Float64 = (l1 + l2) / 2
+    while l2 - l1 > 1e-10 * (l2 + 1)
+        lm = (l1 + l2) / 2
         be = max.(0.0, bm / lm)
-        xt = @. optimizer.x_min + (optimizer.x_k - optimizer.x_min) * be^η
-        x_new = @. max(max(min(min(xt, optimizer.x_k + optimizer.move), optimizer.x_max), optimizer.x_k - optimizer.move), optimizer.x_min)
-        if (vol - optimizer.volume_max) + diff_vol' * (x_new - optimizer.x_k) > 0
+        xt = @. opt.x_min + (opt.x_k - opt.x_min) * be^η
+        x_new = @. max(max(min(min(xt, opt.x_k + opt.move), opt.x_max), opt.x_k - opt.move), opt.x_min)
+        if (vol - opt.volume_max) + df_vol' * (x_new - opt.x_k) > 0
             l1 = lm
         else
             l2 = lm
         end
     end
     
-    optimizer.x_k = x_new[:]
+    opt.x_k = x_new[:]
 
-    optimizer.iter += 1
+    # Set areas to the elements
+    set_areas(opt)
 end
 
 
-function optimize!(optimizer::Optimizer)
-    error::Float64 = Inf
-    optimizer.iter = 0
+function optimize!(opt::Optimizer)
+    error = Inf
+    opt.iter = 0
+    set_areas(opt)
 
-    while error > optimizer.tol && optimizer.iter < optimizer.max_iters
-        optimizer.iter += 1
+    while error > opt.tol && opt.iter < opt.max_iters
+        opt.x_km2 = opt.x_km1[:]
+        opt.x_km1 = opt.x_k[:]
 
-        optimizer.x_km2 = optimizer.x_km1[:]
-        optimizer.x_km1 = optimizer.x_k[:]
+        update_x!(opt)
 
-        update_x!(optimizer)
-        
-        error = norm((optimizer.x_k - optimizer.x_km1) ./ (optimizer.x_k + optimizer.tol * optimizer.x_init))
+        error = ifelse(opt.iter < 5, Inf, norm(opt.x_k - opt.x_km1))
+
+        @info "Iteration: $(opt.iter)\t c:$(obj(opt.compliance))\t error: $error"
+
+        opt.iter += 1
     end
 end
 
-# TODO: Create a class Data to store the data of the optimization each iteration. Save in xml.
+# TODO: Create a class Data to store the data of the optimization each iteration. Save in json.

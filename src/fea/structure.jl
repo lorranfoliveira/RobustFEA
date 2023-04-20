@@ -78,10 +78,6 @@ Returns the number of degrees of freedom for the given structure.
 """
 number_of_dofs(structure::Structure)::Int64 = 2 * length(structure.nodes)
 
-"""
-Returns the free degrees of freedom for the given structure.
-"""
-
 constraint(structure::Structure) = [c for node in structure.nodes for c in node.constraint]
 
 function restricted_dofs(structure::Structure; local_dofs::Bool=false)::Vector{Int64}
@@ -119,6 +115,7 @@ Returns the mass matrix for the given structure.
 function forces(structure::Structure; include_restricted::Bool=false, exclude_zeros::Bool=false)::Vector{Float64} 
     return [force for node in structure.nodes for force in forces(node, include_restricted=include_restricted, exclude_zeros=exclude_zeros)]
 end
+
 
 """
 Returns the stiffness matrix for the given structure.

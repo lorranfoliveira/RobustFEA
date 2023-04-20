@@ -57,7 +57,7 @@ include("../../../src/fea/fea.jl")
         end
 
         @testset "diff_obj_smooth" begin
-            @test diff_obj(compliance) ≈ [-0.07997952656806127 -1249.6800846305637 -1249.6800846305637 -0.07997952656806127]
+            @test diff_obj(compliance) ≈ [-0.07997952656806127, -1249.6800846305637, -1249.6800846305637, -0.07997952656806127]
         end
     end
 
