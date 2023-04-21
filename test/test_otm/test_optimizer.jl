@@ -41,6 +41,8 @@ using Test
         optimizer = Optimizer(compliance)
 
         optimize!(optimizer)
+
+        println("")
     end
 
     @testset verbose = true "Example 2" begin

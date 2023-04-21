@@ -5,6 +5,7 @@ mutable struct Optimizer
     compliance::T where T<:Compliance
     volume_max::Float64
     adaptive_move::Bool
+    min_iters::Int64
     max_iters::Int64
     x_min::Float64
     tol::Float64
@@ -24,7 +25,8 @@ mutable struct Optimizer
 
     function Optimizer(compliance::T; volume_max::Float64=1.0, 
                                       adaptive_move::Bool=true, 
-                                      max_iters::Int64=1000, 
+                                      min_iters::Int64=10,
+                                      max_iters::Int64=10000, 
                                       x_min::Float64=0.0, 
                                       tol::Float64=1e-6) where T<:Compliance
 
@@ -45,6 +47,7 @@ mutable struct Optimizer
         new(compliance, 
             volume_max,
             adaptive_move, 
+            min_iters,
             max_iters, 
             x_min, 
             tol, 
@@ -76,15 +79,14 @@ function update_move!(opt::Optimizer)
     terms = (opt.x_k - opt.x_km1) .* (opt.x_km1 - opt.x_km2)
     for i=eachindex(terms)
         if terms[i] < 0
-            move_tmp[i] = 0.9 * opt.move[i]
+            move_tmp[i] = 0.95 * opt.move[i]
         elseif terms[i] > 0
-            move_tmp[i] = 1.1 * opt.move[i]
+            move_tmp[i] = 1.05 * opt.move[i]
         end
     end
 
     opt.move = max.(1e-4 * opt.x_init, min.(move_tmp, 10 * opt.x_init))
 end
-
 
 function update_x!(opt::Optimizer)
     df_vol = diff_vol(opt)
@@ -127,17 +129,36 @@ function optimize!(opt::Optimizer)
     set_areas(opt)
 
     while error > opt.tol && opt.iter < opt.max_iters
+        opt.compliance.base.obj_km2 = opt.compliance.base.obj_km1
+        opt.compliance.base.obj_km1 = opt.compliance.base.obj_k
+
         opt.x_km2 = opt.x_km1[:]
         opt.x_km1 = opt.x_k[:]
 
         update_x!(opt)
+        opt.compliance.base.obj_k = obj(opt.compliance)
 
-        error = ifelse(opt.iter < 5, Inf, norm(opt.x_k - opt.x_km1))
+        update_smooth_parameter!(opt::Optimizer)
 
-        @info "Iteration: $(opt.iter)\t c:$(obj(opt.compliance))\t error: $error"
+        error = ifelse(opt.iter <= opt.min_iters, Inf, norm(opt.x_k - opt.x_km1))
+
+        @info state_to_string(opt, error)
 
         opt.iter += 1
     end
 end
+
+function update_smooth_parameter!(opt::Optimizer)
+    # Update smooth parameters
+    if typeof(opt.compliance) <: ComplianceSmooth && opt.iter > 2
+        update_smooth_parameter!(opt.compliance)
+    end
+end
+
+function state_to_string(opt::Optimizer, error::Float64)
+    s = "Iteration: $(opt.iter)\t $(state_to_string(opt.compliance))\t error: $(ifelse(error == Inf, "-", error))"
+    return s
+end
+
 
 # TODO: Create a class Data to store the data of the optimization each iteration. Save in json.

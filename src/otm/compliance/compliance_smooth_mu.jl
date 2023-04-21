@@ -1,7 +1,7 @@
 include("base_compliance.jl")
 include("../../../src/fea/structure.jl")
 
-struct ComplianceSmoothMu <: Compliance
+struct ComplianceSmoothMu <: ComplianceSmooth
     base::BaseCompliance
     β::Float64
 
