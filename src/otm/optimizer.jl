@@ -22,6 +22,7 @@ mutable struct Optimizer
     x_km2::Vector{Float64}
 
     df_obj_k::Vector{Float64}
+    df_vol::Vector{Float64}
 
     function Optimizer(compliance::T; volume_max::Float64=1.0, 
                                       adaptive_move::Bool=true, 
@@ -43,6 +44,7 @@ mutable struct Optimizer
         x_km2 = zeros(n)
 
         df_obj_k = zeros(n)
+        df_vol_init = zeros(n)
 
         new(compliance, 
             volume_max,
@@ -59,7 +61,8 @@ mutable struct Optimizer
             x_k, 
             x_km1, 
             x_km2, 
-            df_obj_k)
+            df_obj_k,
+            df_vol_init)
     end
 end
 
@@ -89,7 +92,6 @@ function update_move!(opt::Optimizer)
 end
 
 function update_x!(opt::Optimizer)
-    df_vol = diff_vol(opt)
     vol = volume(opt.compliance.base.structure)
     opt.df_obj_k = diff_obj(opt.compliance)
 
@@ -99,7 +101,7 @@ function update_x!(opt::Optimizer)
 
     η = 0.5
 
-    bm = -opt.df_obj_k ./ df_vol
+    bm = -opt.df_obj_k ./ opt.df_vol
     l1 = 0.0
     l2 = 1.2 * maximum(bm)
     x_new = zeros(opt.n)
@@ -109,7 +111,7 @@ function update_x!(opt::Optimizer)
         be = max.(0.0, bm / lm)
         xt = @. opt.x_min + (opt.x_k - opt.x_min) * be^η
         x_new = @. max(max(min(min(xt, opt.x_k + opt.move), opt.x_max), opt.x_k - opt.move), opt.x_min)
-        if (vol - opt.volume_max) + df_vol' * (x_new - opt.x_k) > 0
+        if (vol - opt.volume_max) + opt.df_vol' * (x_new - opt.x_k) > 0
             l1 = lm
         else
             l2 = lm
@@ -127,6 +129,7 @@ function optimize!(opt::Optimizer)
     error = Inf
     opt.iter = 0
     set_areas(opt)
+    opt.df_vol = diff_vol(opt)
 
     while error > opt.tol && opt.iter < opt.max_iters
         opt.compliance.base.obj_km2 = opt.compliance.base.obj_km1
