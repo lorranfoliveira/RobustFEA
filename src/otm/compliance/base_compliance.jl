@@ -72,12 +72,14 @@ Matrix that maps the complete forces vector to the loaded forces vector.
 function H(base::BaseCompliance)
     s = base.structure
     fl_dofs = free_loaded_dofs(s)
+
+    f = forces(s; include_restricted=true)
     
     h = spzeros(number_of_dofs(s), length(fl_dofs))
     
     c::Int64 = 1
     for i in fl_dofs
-        h[i, c] = 1.0
+        h[i, c] = f[i]
         c += 1
     end
 

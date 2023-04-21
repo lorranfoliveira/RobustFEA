@@ -49,12 +49,12 @@ using Test
         nodes = [
             Node(1, [0.0, 0.0]; constraint=[true, true]),
             Node(2, [1.0, 0.0]),
-            Node(3, [2.0, 0.0]; force=[100.0, 100.0]),
+            Node(3, [2.0, 0.0]; force=[1.0, 1.0]),
             Node(4, [0.5, 0.5]),
             Node(5, [1.5, 0.5]),
             Node(6, [0.0, 1.0]; constraint=[true, true]),
             Node(7, [1.0, 1.0]),
-            Node(8, [2.0, 1.0]; force=[1.0, 1.0])
+            Node(8, [2.0, 1.0]; force=[1e-10, 1e-10])
         ]
 
         elements = [
