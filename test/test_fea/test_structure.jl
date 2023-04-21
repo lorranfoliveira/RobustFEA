@@ -17,15 +17,15 @@ using Test
 
         area = 0.0014
         elements = [
-            Element(1, area, [nodes[1], nodes[2]], material),
-            Element(2, area, [nodes[1], nodes[5]], material),
-            Element(3, area, [nodes[2], nodes[3]], material),
-            Element(4, area, [nodes[2], nodes[6]], material),
-            Element(5, area, [nodes[4], nodes[3]], material),
-            Element(6, area, [nodes[5], nodes[2]], material),
-            Element(7, area, [nodes[5], nodes[6]], material),
-            Element(8, area, [nodes[6], nodes[3]], material),
-            Element(9, area, [nodes[6], nodes[4]], material)
+            Element(1, [nodes[1], nodes[2]], material, area),
+            Element(2, [nodes[1], nodes[5]], material, area),
+            Element(3, [nodes[2], nodes[3]], material, area),
+            Element(4, [nodes[2], nodes[6]], material, area),
+            Element(5, [nodes[4], nodes[3]], material, area),
+            Element(6, [nodes[5], nodes[2]], material, area),
+            Element(7, [nodes[5], nodes[6]], material, area),
+            Element(8, [nodes[6], nodes[3]], material, area),
+            Element(9, [nodes[6], nodes[4]], material, area)
         ]
 
         structure = Structure(nodes, elements)
@@ -112,21 +112,21 @@ using Test
         initial_area = 1.0
 
         elements = [
-            Element(1, initial_area, [nodes[1], nodes[4]], material),
-            Element(2, initial_area, [nodes[1], nodes[6]], material),
-            Element(3, initial_area, [nodes[2], nodes[1]], material),
-            Element(4, initial_area, [nodes[2], nodes[5]], material),
-            Element(5, initial_area, [nodes[3], nodes[2]], material),
-            Element(6, initial_area, [nodes[3], nodes[5]], material),
-            Element(7, initial_area, [nodes[4], nodes[2]], material),
-            Element(8, initial_area, [nodes[4], nodes[7]], material),
-            Element(9, initial_area, [nodes[5], nodes[7]], material),
-            Element(10, initial_area, [nodes[5], nodes[8]], material),
-            Element(11, initial_area, [nodes[6], nodes[4]], material),
-            Element(12, initial_area, [nodes[6], nodes[7]], material),
-            Element(13, initial_area, [nodes[7], nodes[2]], material),
-            Element(14, initial_area, [nodes[7], nodes[8]], material),
-            Element(15, initial_area, [nodes[8], nodes[3]], material)]
+            Element(1, [nodes[1], nodes[4]], material, initial_area),
+            Element(2, [nodes[1], nodes[6]], material, initial_area),
+            Element(3, [nodes[2], nodes[1]], material, initial_area),
+            Element(4, [nodes[2], nodes[5]], material, initial_area),
+            Element(5, [nodes[3], nodes[2]], material, initial_area),
+            Element(6, [nodes[3], nodes[5]], material, initial_area),
+            Element(7, [nodes[4], nodes[2]], material, initial_area),
+            Element(8, [nodes[4], nodes[7]], material, initial_area),
+            Element(9, [nodes[5], nodes[7]], material, initial_area),
+            Element(10, [nodes[5], nodes[8]], material, initial_area),
+            Element(11, [nodes[6], nodes[4]], material, initial_area),
+            Element(12, [nodes[6], nodes[7]], material, initial_area),
+            Element(13, [nodes[7], nodes[2]], material, initial_area),
+            Element(14, [nodes[7], nodes[8]], material, initial_area),
+            Element(15, [nodes[8], nodes[3]], material, initial_area)]
 
         structure = Structure(nodes, elements)
 

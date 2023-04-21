@@ -20,18 +20,18 @@ using Test
         ]
 
         elements = [
-            Element(1, 1.0, [nodes[1], nodes[2]], material),
-            Element(2, 1.0, [nodes[2], nodes[3]], material),
-            Element(3, 1.0, [nodes[1], nodes[4]], material),
-            Element(4, 1.0, [nodes[2], nodes[5]], material),
-            Element(5, 1.0, [nodes[3], nodes[6]], material),
-            Element(6, 1.0, [nodes[4], nodes[5]], material),
-            Element(7, 1.0, [nodes[5], nodes[6]], material),
-            Element(8, 1.0, [nodes[4], nodes[7]], material),
-            Element(9, 1.0, [nodes[5], nodes[8]], material),
-            Element(10, 1.0, [nodes[6], nodes[9]], material),
-            Element(11, 1.0, [nodes[7], nodes[8]], material),
-            Element(12, 1.0, [nodes[8], nodes[9]], material)
+            Element(1, [nodes[1], nodes[2]], material),
+            Element(2, [nodes[2], nodes[3]], material),
+            Element(3, [nodes[1], nodes[4]], material),
+            Element(4, [nodes[2], nodes[5]], material),
+            Element(5, [nodes[3], nodes[6]], material),
+            Element(6, [nodes[4], nodes[5]], material),
+            Element(7, [nodes[5], nodes[6]], material),
+            Element(8, [nodes[4], nodes[7]], material),
+            Element(9, [nodes[5], nodes[8]], material),
+            Element(10, [nodes[6], nodes[9]], material),
+            Element(11, [nodes[7], nodes[8]], material),
+            Element(12, [nodes[8], nodes[9]], material)
         ]
 
         structure = Structure(nodes, elements)
@@ -60,21 +60,21 @@ using Test
         ]
 
         elements = [
-            Element(1, 1.0, [nodes[1], nodes[2]], material),
-            Element(2, 1.0, [nodes[1], nodes[4]], material),
-            Element(3, 1.0, [nodes[1], nodes[6]], material),
-            Element(4, 1.0, [nodes[2], nodes[3]], material),
-            Element(5, 1.0, [nodes[2], nodes[5]], material),
-            Element(6, 1.0, [nodes[2], nodes[7]], material),
-            Element(7, 1.0, [nodes[3], nodes[8]], material),
-            Element(8, 1.0, [nodes[4], nodes[2]], material),
-            Element(9, 1.0, [nodes[4], nodes[7]], material),
-            Element(10, 1.0, [nodes[5], nodes[3]], material),
-            Element(11, 1.0, [nodes[5], nodes[8]], material),
-            Element(12, 1.0, [nodes[6], nodes[4]], material),
-            Element(13, 1.0, [nodes[6], nodes[7]], material),
-            Element(14, 1.0, [nodes[7], nodes[5]], material),
-            Element(15, 1.0, [nodes[7], nodes[8]], material)
+            Element(1, [nodes[1], nodes[2]], material),
+            Element(2, [nodes[1], nodes[4]], material),
+            Element(3, [nodes[1], nodes[6]], material),
+            Element(4, [nodes[2], nodes[3]], material),
+            Element(5, [nodes[2], nodes[5]], material),
+            Element(6, [nodes[2], nodes[7]], material),
+            Element(7, [nodes[3], nodes[8]], material),
+            Element(8, [nodes[4], nodes[2]], material),
+            Element(9, [nodes[4], nodes[7]], material),
+            Element(10, [nodes[5], nodes[3]], material),
+            Element(11, [nodes[5], nodes[8]], material),
+            Element(12, [nodes[6], nodes[4]], material),
+            Element(13, [nodes[6], nodes[7]], material),
+            Element(14, [nodes[7], nodes[5]], material),
+            Element(15, [nodes[7], nodes[8]], material)
         ]
 
         structure = Structure(nodes, elements)

@@ -9,16 +9,16 @@ include("../../src/fea/fea.jl")
         Node(5, [3.0, 1.0]; force=[10.0, -5.0])
         ]
     
-    element = Element(2, 0.0014, [nodes[1], nodes[2]], Material(1, 100e6))
+    element = Element(2, [nodes[1], nodes[2]], Material(1, 100e6), 0.0014)
 
     # Material
     material = Material(1, 1.0)
 
     # Element
     @testset "Constructor_errors" begin
-        @test_throws ArgumentError Element(0, 1.0, [nodes[1], nodes[2]], material)
-        @test_throws ArgumentError Element(1, -1.0, [nodes[1], nodes[2]], material)
-        @test_throws ArgumentError Element(1, 1.0, [nodes[1], nodes[1]], material)
+        @test_throws ArgumentError Element(0, [nodes[1], nodes[2]], material, 1.0)
+        @test_throws ArgumentError Element(1, [nodes[1], nodes[2]], material, -1.0)
+        @test_throws ArgumentError Element(1, [nodes[1], nodes[1]], material)
     end
 
     @testset "Constructor" begin
@@ -35,7 +35,7 @@ include("../../src/fea/fea.jl")
     @testset "constraint" begin
         @test constraint(element) == [true, true, false, false]
 
-        element2 = Element(2, 0.0014, [nodes[2], nodes[1]], Material(1, 100e6))
+        element2 = Element(2, [nodes[2], nodes[1]], Material(1, 100e6), 0.0014)
         @test constraint(element2) == [false, false, true, true]
     end
 
@@ -43,7 +43,7 @@ include("../../src/fea/fea.jl")
         @test free_loaded_dofs(element) == [9, 10]
         @test free_loaded_dofs(element, local_dofs=true) == [3, 4]
 
-        element2 = Element(2, 0.0014, [nodes[2], nodes[1]], Material(1, 100e6))
+        element2 = Element(2, [nodes[2], nodes[1]], Material(1, 100e6), 0.0014)
         @test free_loaded_dofs(element2) == [9, 10]
         @test free_loaded_dofs(element2, local_dofs=true) == [1, 2]
     end
