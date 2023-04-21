@@ -5,6 +5,8 @@ using LinearAlgebra,
 
 abstract type Compliance end
 
+abstract type ComplianceSmooth <: Compliance end
+
 """
 BaseCompliance object.
 
@@ -28,9 +30,13 @@ mutable struct BaseCompliance <: Compliance
     structure::Structure
     eig_vals
     eig_vecs
+    obj_k::Float64
+    obj_km1::Float64
+    obj_km2::Float64
+
 
     function BaseCompliance(structure::Structure)
-        new(structure, [], [])
+        new(structure, [], [], 0.0, 0.0, 0.0)
     end
 end
 

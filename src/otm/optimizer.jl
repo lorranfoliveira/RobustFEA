@@ -85,7 +85,6 @@ function update_move!(opt::Optimizer)
     opt.move = max.(1e-4 * opt.x_init, min.(move_tmp, 10 * opt.x_init))
 end
 
-
 function update_x!(opt::Optimizer)
     df_vol = diff_vol(opt)
     vol = volume(opt.compliance.base.structure)
@@ -127,17 +126,36 @@ function optimize!(opt::Optimizer)
     set_areas(opt)
 
     while error > opt.tol && opt.iter < opt.max_iters
+        opt.compliance.base.obj_km2 = opt.compliance.base.obj_km1
+        opt.compliance.base.obj_km1 = opt.compliance.base.obj_k
+
         opt.x_km2 = opt.x_km1[:]
         opt.x_km1 = opt.x_k[:]
 
         update_x!(opt)
+        opt.compliance.base.obj_k = obj(opt.compliance)
+
+        update_smooth_parameter!(opt::Optimizer)
 
         error = ifelse(opt.iter < 5, Inf, norm(opt.x_k - opt.x_km1))
 
-        @info "Iteration: $(opt.iter)\t c:$(obj(opt.compliance))\t error: $error"
+        @info state_to_string(opt, error)
 
         opt.iter += 1
     end
 end
+
+function update_smooth_parameter!(opt::Optimizer)
+    # Update smooth parameters
+    if typeof(opt.compliance) <: ComplianceSmooth
+        update_smooth_parameter!(opt.compliance)
+    end
+end
+
+function state_to_string(opt::Optimizer, error::Float64)
+    s = "Iteration: $(opt.iter)\t $(state_to_string(opt.compliance))\t error: $error"
+    return s
+end
+
 
 # TODO: Create a class Data to store the data of the optimization each iteration. Save in json.
