@@ -24,12 +24,17 @@ mutable struct Optimizer
     df_obj_k::Vector{Float64}
     df_vol::Vector{Float64}
 
+    vol::Float64
+
+    output::OutputOptimizer
+
     function Optimizer(compliance::T; volume_max::Float64=1.0, 
                                       adaptive_move::Bool=true, 
                                       min_iters::Int64=10,
                                       max_iters::Int64=10000, 
                                       x_min::Float64=0.0, 
-                                      tol::Float64=1e-6) where T<:Compliance
+                                      tol::Float64=1e-6,
+                                      filename::String="output.json") where T<:Compliance
 
         els_len = [len(el) for el in compliance.base.structure.elements]
         n = length(compliance.base.structure.elements)
@@ -45,6 +50,9 @@ mutable struct Optimizer
 
         df_obj_k = zeros(n)
         df_vol_init = zeros(n)
+
+        output = OutputOptimizer(filename, compliance.base.structure.elements)
+        vol = 0.0
 
         new(compliance, 
             volume_max,
@@ -62,7 +70,9 @@ mutable struct Optimizer
             x_km1, 
             x_km2, 
             df_obj_k,
-            df_vol_init)
+            df_vol_init,
+            vol,
+            output)
     end
 end
 
@@ -92,7 +102,7 @@ function update_move!(opt::Optimizer)
 end
 
 function update_x!(opt::Optimizer)
-    vol = volume(opt.compliance.base.structure)
+    opt.vol = volume(opt.compliance.base.structure)
     opt.df_obj_k = diff_obj(opt.compliance)
 
     if opt.adaptive_move && opt.iter > 2
@@ -111,7 +121,7 @@ function update_x!(opt::Optimizer)
         be = max.(0.0, bm / lm)
         xt = @. opt.x_min + (opt.x_k - opt.x_min) * be^η
         x_new = @. max(max(min(min(xt, opt.x_k + opt.move), opt.x_max), opt.x_k - opt.move), opt.x_min)
-        if (vol - opt.volume_max) + opt.df_vol' * (x_new - opt.x_k) > 0
+        if (opt.vol - opt.volume_max) + opt.df_vol' * (x_new - opt.x_k) > 0
             l1 = lm
         else
             l2 = lm
@@ -140,8 +150,9 @@ function optimize!(opt::Optimizer)
 
         update_x!(opt)
         opt.compliance.base.obj_k = obj(opt.compliance)
+        push!(opt.output.iterations, OutputIteration(opt.iter, opt.x_k, opt.compliance.base.obj_k, opt.vol))
 
-        update_smooth_parameter!(opt::Optimizer)
+        update_smooth_parameter!(opt)
 
         error = ifelse(opt.iter <= opt.min_iters, Inf, norm(opt.x_k - opt.x_km1))
 
@@ -149,6 +160,8 @@ function optimize!(opt::Optimizer)
 
         opt.iter += 1
     end
+
+    save_json(opt.output)
 end
 
 function update_smooth_parameter!(opt::Optimizer)
