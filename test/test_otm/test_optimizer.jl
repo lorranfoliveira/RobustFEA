@@ -1,5 +1,7 @@
 include("../../src/otm/otm.jl")
 include("../../src/fea/fea.jl")
+include("../../src/builder/structure_builder.jl")
+
 
 using Test
 
@@ -84,5 +86,7 @@ using Test
         optimizer = Optimizer(compliance)
 
         optimize!(optimizer)
+
+        println("")
     end
 end

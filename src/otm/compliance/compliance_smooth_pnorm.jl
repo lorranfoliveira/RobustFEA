@@ -7,7 +7,7 @@ mutable struct ComplianceSmoothPNorm <: ComplianceSmooth
     p_min::Float64
     p_max::Float64
 
-    function ComplianceSmoothPNorm(structure::Structure; p::Float64=20.0, p_min::Float64=2.0, p_max::Float64=20.0)
+    function ComplianceSmoothPNorm(structure::Structure; p::Float64=30.0, p_min::Float64=2.0, p_max::Float64=30.0)
         new(BaseCompliance(structure), p, p_min, p_max)
     end
 end
@@ -43,5 +43,5 @@ function update_smooth_parameter!(compliance::ComplianceSmoothPNorm)
 end
 
 function state_to_string(compliance::ComplianceSmoothPNorm)
-    return "obj: $(compliance.base.obj_k)\t p: $(compliance.p)"
+    return "obj: $(obj(compliance))\t p: $(compliance.p)"
 end

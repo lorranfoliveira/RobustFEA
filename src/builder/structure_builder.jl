@@ -80,7 +80,6 @@ function build_elements!(builder::StructureBuilder)
     sz_nodes = size(builder.nodes_matrix)[1]
     for node_ref=1:sz_nodes
         for node=1:sz_nodes
-            @info "node_ref: $node_ref, node: $node els_size: $(length(builder.elements_matrix))"
             if node != node_ref
                 el_ref = [node_ref, node]
                 sz_els_matrix = size(builder.elements_matrix)[1]
@@ -89,17 +88,20 @@ function build_elements!(builder::StructureBuilder)
                     builder.elements_matrix = vcat(builder.elements_matrix, el_ref')
                     continue
                 end
-
+                
+                overlaps = false
                 for el2_id=1:sz_els_matrix
                     el2 = builder.elements_matrix[el2_id, :]
 
-                    if sort(el_ref) != sort(el2)
-                        if is_overlap(builder, el_ref, el2)
-                            continue
-                        end
-                        builder.elements_matrix = vcat(builder.elements_matrix, el_ref')
+                    if is_overlap(builder, el_ref, el2)
+                        overlaps = true
                         break
                     end
+
+                end
+                
+                if !overlaps
+                    builder.elements_matrix = vcat(builder.elements_matrix, el_ref')
                 end
             end
         end 
@@ -110,8 +112,10 @@ function build(builder::StructureBuilder)::Structure
     build_nodes!(builder)
     build_elements!(builder)
 
+    println(builder.elements_matrix)
+
     nodes = [Node(i, builder.nodes_matrix[i, :]) for i in 1:size(builder.nodes_matrix)[1]]
-    elements = [Element(i, [nodes[builder.elements_matrix[i, :]]], material) for i=1:size(builder.elements_matrix)[1]]
+    elements = [Element(i, nodes[builder.elements_matrix[i, :]], builder.material) for i=1:size(builder.elements_matrix)[1]]
 
     return Structure(nodes, elements)
 end

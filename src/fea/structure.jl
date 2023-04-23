@@ -50,9 +50,8 @@ Returns the closest node to the given position.
 function nearest_node_id(structure::Structure, position::Vector{Float64})::Int64
     m = Matrix{Float64}(undef, (2, length(structure.nodes)))
 
-    for i in eachindex(nodes)
-        m[1, i] = structure.nodes[i].position[1]
-        m[2, i] = structure.nodes[i].position[2]
+    for i in eachindex(structure.nodes)
+        m[:, i] = structure.nodes[i].position
     end
     
     kd = KDTree(m)
@@ -62,8 +61,8 @@ end
 """
 Load the given force to the closest node to the given position.
 """
-function load_nearest_node(structure::Structure, position::Vector{Float64}, forces::Vector{Float64})
-    structure.nodes[nearest_node_id(structure, position)].forces = forces
+function load_nearest_node(structure::Structure, position::Vector{Float64}, force::Vector{Float64})
+    structure.nodes[nearest_node_id(structure, position)].force = force
 end
 
 """
