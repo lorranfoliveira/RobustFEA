@@ -1,4 +1,7 @@
 include("compliance/compliance.jl")
+include("../io/output/output.jl")
+
+using JSON
 
 mutable struct Optimizer
     # manual
@@ -26,7 +29,7 @@ mutable struct Optimizer
 
     vol::Float64
 
-    output::OutputOptimizer
+    output::Output
 
     function Optimizer(compliance::T; volume_max::Float64=1.0, 
                                       adaptive_move::Bool=true, 
@@ -51,8 +54,10 @@ mutable struct Optimizer
         df_obj_k = zeros(n)
         df_vol_init = zeros(n)
 
-        output = OutputOptimizer(filename, compliance.base.structure.elements)
         vol = 0.0
+
+        # Create output
+        output = Output(filename)
 
         new(compliance, 
             volume_max,
@@ -150,7 +155,13 @@ function optimize!(opt::Optimizer)
 
         update_x!(opt)
         opt.compliance.base.obj_k = obj(opt.compliance)
-        push!(opt.output.iterations, OutputIteration(opt.iter, opt.x_k, opt.compliance.base.obj_k, opt.vol))
+        
+        if opt.output.output_iterations === nothing
+            opt.output.output_iterations = [OutputIteration(opt.iter, opt.x_k, opt.compliance.base.obj_k, opt.vol)]
+        else
+            push!(opt.output.output_iterations, 
+            OutputIteration(opt.iter, opt.x_k, opt.compliance.base.obj_k, opt.vol))
+        end
 
         update_smooth_parameter!(opt)
 
@@ -161,6 +172,8 @@ function optimize!(opt::Optimizer)
         opt.iter += 1
     end
 
+    # Results to json
+    opt.output.output_structure = OutputStructure(opt.compliance.base.structure)
     save_json(opt.output)
 end
 

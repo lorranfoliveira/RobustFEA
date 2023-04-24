@@ -1,528 +1,104 @@
 {
     "filename": "output.json",
-    "elements": [
-        {
-            "id": 1,
-            "nodes": [
-                {
-                    "id": 1,
-                    "position": [
-                        0.0,
-                        0.0
-                    ],
-                    "force": [
-                        0.0,
-                        0.0
-                    ],
-                    "constraint": [
-                        true,
-                        true
-                    ]
-                },
-                {
-                    "id": 2,
-                    "position": [
-                        1.0,
-                        0.0
-                    ],
-                    "force": [
-                        0.0,
-                        0.0
-                    ],
-                    "constraint": [
-                        false,
-                        false
-                    ]
-                }
+    "output_structure": {
+        "nodes": [
+            [
+                0.0,
+                0.0
             ],
-            "material": {
-                "id": 1,
-                "young": 1.0
-            },
-            "area": 0.14705983955150864
-        },
-        {
-            "id": 2,
-            "nodes": [
-                {
-                    "id": 1,
-                    "position": [
-                        0.0,
-                        0.0
-                    ],
-                    "force": [
-                        0.0,
-                        0.0
-                    ],
-                    "constraint": [
-                        true,
-                        true
-                    ]
-                },
-                {
-                    "id": 4,
-                    "position": [
-                        0.0,
-                        1.0
-                    ],
-                    "force": [
-                        0.0,
-                        0.0
-                    ],
-                    "constraint": [
-                        true,
-                        true
-                    ]
-                }
+            [
+                1.0,
+                0.0
             ],
-            "material": {
-                "id": 1,
-                "young": 1.0
-            },
-            "area": 0.0
-        },
-        {
-            "id": 3,
-            "nodes": [
-                {
-                    "id": 1,
-                    "position": [
-                        0.0,
-                        0.0
-                    ],
-                    "force": [
-                        0.0,
-                        0.0
-                    ],
-                    "constraint": [
-                        true,
-                        true
-                    ]
-                },
-                {
-                    "id": 5,
-                    "position": [
-                        1.0,
-                        1.0
-                    ],
-                    "force": [
-                        0.0,
-                        0.0
-                    ],
-                    "constraint": [
-                        false,
-                        false
-                    ]
-                }
+            [
+                2.0,
+                0.0
             ],
-            "material": {
-                "id": 1,
-                "young": 1.0
-            },
-            "area": 0.16637614364491826
-        },
-        {
-            "id": 4,
-            "nodes": [
-                {
-                    "id": 1,
-                    "position": [
-                        0.0,
-                        0.0
-                    ],
-                    "force": [
-                        0.0,
-                        0.0
-                    ],
-                    "constraint": [
-                        true,
-                        true
-                    ]
-                },
-                {
-                    "id": 6,
-                    "position": [
-                        2.0,
-                        1.0
-                    ],
-                    "force": [
-                        0.0,
-                        0.0
-                    ],
-                    "constraint": [
-                        false,
-                        false
-                    ]
-                }
+            [
+                0.0,
+                1.0
             ],
-            "material": {
-                "id": 1,
-                "young": 1.0
-            },
-            "area": 3.169540469024449e-11
-        },
-        {
-            "id": 5,
-            "nodes": [
-                {
-                    "id": 2,
-                    "position": [
-                        1.0,
-                        0.0
-                    ],
-                    "force": [
-                        0.0,
-                        0.0
-                    ],
-                    "constraint": [
-                        false,
-                        false
-                    ]
-                },
-                {
-                    "id": 3,
-                    "position": [
-                        2.0,
-                        0.0
-                    ],
-                    "force": [
-                        1.0,
-                        1.0
-                    ],
-                    "constraint": [
-                        false,
-                        false
-                    ]
-                }
+            [
+                1.0,
+                1.0
             ],
-            "material": {
-                "id": 1,
-                "young": 1.0
-            },
-            "area": 0.14705751615058713
-        },
-        {
-            "id": 6,
-            "nodes": [
-                {
-                    "id": 2,
-                    "position": [
-                        1.0,
-                        0.0
-                    ],
-                    "force": [
-                        0.0,
-                        0.0
-                    ],
-                    "constraint": [
-                        false,
-                        false
-                    ]
-                },
-                {
-                    "id": 4,
-                    "position": [
-                        0.0,
-                        1.0
-                    ],
-                    "force": [
-                        0.0,
-                        0.0
-                    ],
-                    "constraint": [
-                        true,
-                        true
-                    ]
-                }
+            [
+                2.0,
+                1.0
+            ]
+        ],
+        "elements": [
+            [
+                1,
+                2
             ],
-            "material": {
-                "id": 1,
-                "young": 1.0
-            },
-            "area": 1.6427409070707152e-6
-        },
-        {
-            "id": 7,
-            "nodes": [
-                {
-                    "id": 2,
-                    "position": [
-                        1.0,
-                        0.0
-                    ],
-                    "force": [
-                        0.0,
-                        0.0
-                    ],
-                    "constraint": [
-                        false,
-                        false
-                    ]
-                },
-                {
-                    "id": 5,
-                    "position": [
-                        1.0,
-                        1.0
-                    ],
-                    "force": [
-                        0.0,
-                        0.0
-                    ],
-                    "constraint": [
-                        false,
-                        false
-                    ]
-                }
+            [
+                1,
+                4
             ],
-            "material": {
-                "id": 1,
-                "young": 1.0
-            },
-            "area": 1.52597700908311e-33
-        },
-        {
-            "id": 8,
-            "nodes": [
-                {
-                    "id": 2,
-                    "position": [
-                        1.0,
-                        0.0
-                    ],
-                    "force": [
-                        0.0,
-                        0.0
-                    ],
-                    "constraint": [
-                        false,
-                        false
-                    ]
-                },
-                {
-                    "id": 6,
-                    "position": [
-                        2.0,
-                        1.0
-                    ],
-                    "force": [
-                        0.0,
-                        0.0
-                    ],
-                    "constraint": [
-                        false,
-                        false
-                    ]
-                }
+            [
+                1,
+                5
             ],
-            "material": {
-                "id": 1,
-                "young": 1.0
-            },
-            "area": 1.6432261629872534e-6
-        },
-        {
-            "id": 9,
-            "nodes": [
-                {
-                    "id": 3,
-                    "position": [
-                        2.0,
-                        0.0
-                    ],
-                    "force": [
-                        1.0,
-                        1.0
-                    ],
-                    "constraint": [
-                        false,
-                        false
-                    ]
-                },
-                {
-                    "id": 4,
-                    "position": [
-                        0.0,
-                        1.0
-                    ],
-                    "force": [
-                        0.0,
-                        0.0
-                    ],
-                    "constraint": [
-                        true,
-                        true
-                    ]
-                }
+            [
+                1,
+                6
             ],
-            "material": {
-                "id": 1,
-                "young": 1.0
-            },
-            "area": 1.4017802057634877e-7
-        },
-        {
-            "id": 10,
-            "nodes": [
-                {
-                    "id": 3,
-                    "position": [
-                        2.0,
-                        0.0
-                    ],
-                    "force": [
-                        1.0,
-                        1.0
-                    ],
-                    "constraint": [
-                        false,
-                        false
-                    ]
-                },
-                {
-                    "id": 5,
-                    "position": [
-                        1.0,
-                        1.0
-                    ],
-                    "force": [
-                        0.0,
-                        0.0
-                    ],
-                    "constraint": [
-                        false,
-                        false
-                    ]
-                }
+            [
+                2,
+                3
             ],
-            "material": {
-                "id": 1,
-                "young": 1.0
-            },
-            "area": 0.16637614419084798
-        },
-        {
-            "id": 11,
-            "nodes": [
-                {
-                    "id": 3,
-                    "position": [
-                        2.0,
-                        0.0
-                    ],
-                    "force": [
-                        1.0,
-                        1.0
-                    ],
-                    "constraint": [
-                        false,
-                        false
-                    ]
-                },
-                {
-                    "id": 6,
-                    "position": [
-                        2.0,
-                        1.0
-                    ],
-                    "force": [
-                        0.0,
-                        0.0
-                    ],
-                    "constraint": [
-                        false,
-                        false
-                    ]
-                }
+            [
+                2,
+                4
             ],
-            "material": {
-                "id": 1,
-                "young": 1.0
-            },
-            "area": 1.1628727071403522e-6
-        },
-        {
-            "id": 12,
-            "nodes": [
-                {
-                    "id": 4,
-                    "position": [
-                        0.0,
-                        1.0
-                    ],
-                    "force": [
-                        0.0,
-                        0.0
-                    ],
-                    "constraint": [
-                        true,
-                        true
-                    ]
-                },
-                {
-                    "id": 5,
-                    "position": [
-                        1.0,
-                        1.0
-                    ],
-                    "force": [
-                        0.0,
-                        0.0
-                    ],
-                    "constraint": [
-                        false,
-                        false
-                    ]
-                }
+            [
+                2,
+                5
             ],
-            "material": {
-                "id": 1,
-                "young": 1.0
-            },
-            "area": 0.23529256078413996
-        },
-        {
-            "id": 13,
-            "nodes": [
-                {
-                    "id": 5,
-                    "position": [
-                        1.0,
-                        1.0
-                    ],
-                    "force": [
-                        0.0,
-                        0.0
-                    ],
-                    "constraint": [
-                        false,
-                        false
-                    ]
-                },
-                {
-                    "id": 6,
-                    "position": [
-                        2.0,
-                        1.0
-                    ],
-                    "force": [
-                        0.0,
-                        0.0
-                    ],
-                    "constraint": [
-                        false,
-                        false
-                    ]
-                }
+            [
+                2,
+                6
             ],
-            "material": {
-                "id": 1,
-                "young": 1.0
-            },
-            "area": 1.1617288085060242e-6
-        }
-    ],
-    "iterations": [
+            [
+                3,
+                4
+            ],
+            [
+                3,
+                5
+            ],
+            [
+                3,
+                6
+            ],
+            [
+                4,
+                5
+            ],
+            [
+                5,
+                6
+            ]
+        ],
+        "areas_of_elements": [
+            0.14705983955150864,
+            0.0,
+            0.16637614364491826,
+            3.169540469024449e-11,
+            0.14705751615058713,
+            1.6427409070707152e-6,
+            1.52597700908311e-33,
+            1.6432261629872534e-6,
+            1.4017802057634877e-7,
+            0.16637614419084798,
+            1.1628727071403522e-6,
+            0.23529256078413996,
+            1.1617288085060242e-6
+        ]
+    },
+    "output_compliance": null,
+    "output_iterations": [
         {
             "iter": 0,
             "x": [
