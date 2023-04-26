@@ -34,9 +34,9 @@ function update_smooth_parameter!(compliance::ComplianceSmoothPNorm)
 
     term = (base.obj_k - base.obj_km1) * (base.obj_km1 - base.obj_km2)
     if term < 0
-        p_tmp = 0.95 * compliance.p
+        p_tmp = 0.99 * compliance.p
     elseif term > 0
-        p_tmp = 1.05 * compliance.p
+        p_tmp = 1.01 * compliance.p
     end
 
     compliance.p = max(compliance.p_min, min(p_tmp, compliance.p_max))

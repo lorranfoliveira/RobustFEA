@@ -34,7 +34,7 @@ mutable struct Optimizer
     function Optimizer(compliance::T; volume_max::Float64=1.0, 
                                       adaptive_move::Bool=true, 
                                       min_iters::Int64=10,
-                                      max_iters::Int64=10000, 
+                                      max_iters::Int64=1000, 
                                       x_min::Float64=0.0, 
                                       tol::Float64=1e-6,
                                       filename::String="output.json") where T<:Compliance
