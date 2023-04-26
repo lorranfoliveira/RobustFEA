@@ -5,7 +5,7 @@ struct ComplianceSmoothMu <: ComplianceSmooth
     base::BaseCompliance
     β::Float64
 
-    function ComplianceSmoothMu(structure::Structure; β::Float64=0.1)
+    function ComplianceSmoothMu(structure::Structure; β::Float64=5e-2)
         new(BaseCompliance(structure), β)
     end
 end
@@ -35,4 +35,8 @@ function obj(compliance::ComplianceSmoothMu)
     mu = μ(compliance)
 
     return (sqrt(mu^2 + (c[1] - c[2])^2) + c[1] + c[2])/2
+end
+
+function state_to_string(compliance::ComplianceSmoothMu)
+    return "obj: $(obj(compliance))\t β: $(compliance.β)"
 end
