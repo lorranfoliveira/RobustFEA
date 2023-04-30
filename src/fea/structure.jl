@@ -122,23 +122,37 @@ Returns the stiffness matrix for the given structure.
 TODO: This is a naive implementation. It should be improved.
 """
 function K(structure::Structure)::Matrix{Float64}
-    n::Int64 = number_of_dofs(structure)
-    k::SparseMatrixCSC{Float64} = spzeros(n, n)
+    n = length(structure.elements) * 4^2
+    rows = ones(Int64, n)
+    cols = ones(Int64, n)
+    terms = zeros(n)
+    c = 1
 
     for element in structure.elements
         dofs_el::Vector{Int64} = dofs(element, include_restricted=true)
-        k[dofs_el, dofs_el] += K(element)
+        ke = K(element)
+        for i=eachindex(dofs_el)
+            for j=eachindex(dofs_el)
+                rows[c] = dofs_el[i]
+                cols[c] = dofs_el[j]
+                terms[c] = ke[i, j]
+                c += 1
+            end
+        end
     end
+
+    k = sparse(rows, cols, terms)
+    dropzeros!(k)
 
     cons::Vector{Bool} = constraint(structure)
     k[cons, :] .= 0.0
     k[:, cons] .= 0.0
 
-    dropzeros!(k)
-
     dg = nonzeros(diag(k)) 
     λ = structure.tikhonov * (sum(dg) / length(dg))
     k += λ * I
+
+    dropzeros!(k)
     
     return k
 end
