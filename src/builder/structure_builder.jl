@@ -112,8 +112,6 @@ function build(builder::StructureBuilder)::Structure
     build_nodes!(builder)
     build_elements!(builder)
 
-    println(builder.elements_matrix)
-
     nodes = [Node(i, builder.nodes_matrix[i, :]) for i in 1:size(builder.nodes_matrix)[1]]
     elements = [Element(i, nodes[builder.elements_matrix[i, :]], builder.material) for i=1:size(builder.elements_matrix)[1]]
 

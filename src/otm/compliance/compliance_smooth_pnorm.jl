@@ -4,11 +4,9 @@ include("../../../src/fea/structure.jl")
 mutable struct ComplianceSmoothPNorm <: ComplianceSmooth
     base::BaseCompliance
     p::Float64
-    p_min::Float64
-    p_max::Float64
 
-    function ComplianceSmoothPNorm(structure::Structure; p::Float64=30.0, p_min::Float64=2.0, p_max::Float64=30.0)
-        new(BaseCompliance(structure), p, p_min, p_max)
+    function ComplianceSmoothPNorm(structure::Structure; p::Float64=20.0)
+        new(BaseCompliance(structure), p)
     end
 end
 
@@ -26,22 +24,4 @@ end
 
 function obj(compliance::ComplianceSmoothPNorm)
     return norm(compliance.base.eig_vals, compliance.p)
-end
-
-function update_smooth_parameter!(compliance::ComplianceSmoothPNorm)
-    p_tmp = compliance.p
-    base = compliance.base
-
-    term = (base.obj_k - base.obj_km1) * (base.obj_km1 - base.obj_km2)
-    if term < 0
-        p_tmp = 0.99 * compliance.p
-    elseif term > 0
-        p_tmp = 1.01 * compliance.p
-    end
-
-    compliance.p = max(compliance.p_min, min(p_tmp, compliance.p_max))
-end
-
-function state_to_string(compliance::ComplianceSmoothPNorm)
-    return "obj: $(obj(compliance))\t p: $(compliance.p)"
 end

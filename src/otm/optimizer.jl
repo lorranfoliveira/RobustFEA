@@ -25,6 +25,9 @@ mutable struct Optimizer
     x_km2::Vector{Float64}
 
     df_obj_k::Vector{Float64}
+    df_obj_km1::Vector{Float64}
+    df_obj_km2::Vector{Float64}
+
     df_vol::Vector{Float64}
 
     vol::Float64
@@ -34,7 +37,7 @@ mutable struct Optimizer
     function Optimizer(compliance::T; volume_max::Float64=1.0, 
                                       adaptive_move::Bool=true, 
                                       min_iters::Int64=10,
-                                      max_iters::Int64=1000, 
+                                      max_iters::Int64=5000, 
                                       x_min::Float64=0.0, 
                                       tol::Float64=1e-6,
                                       filename::String="output.json") where T<:Compliance
@@ -52,6 +55,9 @@ mutable struct Optimizer
         x_km2 = zeros(n)
 
         df_obj_k = zeros(n)
+        df_obj_km1 = zeros(n)
+        df_obj_km2 = zeros(n)
+
         df_vol_init = zeros(n)
 
         vol = 0.0
@@ -75,6 +81,8 @@ mutable struct Optimizer
             x_km1, 
             x_km2, 
             df_obj_k,
+            df_obj_km1,
+            df_obj_km2,
             df_vol_init,
             vol,
             output)
@@ -114,7 +122,15 @@ function update_x!(opt::Optimizer)
         update_move!(opt)
     end
 
-    η = 0.5
+    if opt.iter ≤ 2
+        η = 0.5
+    else
+        ratio_diff = abs.(opt.df_obj_km1 ./ opt.df_obj_k)
+        ratio_x = @. (opt.x_km2 + opt.tol) / (opt.x_km1 + opt.tol)
+        a = @. 1 + log(ratio_diff) / log(ratio_x)
+        a = max.(min.(map(v -> ifelse(v === NaN, 0, v), a), -0.1), -15)
+        η = @. 1 / (1 - a)
+    end
 
     bm = -opt.df_obj_k ./ opt.df_vol
     l1 = 0.0
@@ -150,6 +166,9 @@ function optimize!(opt::Optimizer)
         opt.compliance.base.obj_km2 = opt.compliance.base.obj_km1
         opt.compliance.base.obj_km1 = opt.compliance.base.obj_k
 
+        opt.df_obj_km2 = opt.df_obj_km1[:]
+        opt.df_obj_km1 = opt.df_obj_k[:]
+
         opt.x_km2 = opt.x_km1[:]
         opt.x_km1 = opt.x_k[:]
 
@@ -163,9 +182,7 @@ function optimize!(opt::Optimizer)
             OutputIteration(opt.iter, opt.x_k, opt.compliance.base.obj_k, opt.vol))
         end
 
-        update_smooth_parameter!(opt)
-
-        error = ifelse(opt.iter <= opt.min_iters, Inf, norm(opt.x_k - opt.x_km1))
+        error = ifelse(opt.iter <= opt.min_iters, Inf, norm((opt.x_k - opt.x_km1) ./ (1 .+ opt.x_km1)))
 
         @info state_to_string(opt, error)
 
@@ -177,15 +194,8 @@ function optimize!(opt::Optimizer)
     save_json(opt.output)
 end
 
-function update_smooth_parameter!(opt::Optimizer)
-    # Update smooth parameters
-    if typeof(opt.compliance) <: ComplianceSmooth && opt.iter > 2
-        update_smooth_parameter!(opt.compliance)
-    end
-end
-
 function state_to_string(opt::Optimizer, error::Float64)
-    s = "Iteration: $(opt.iter)\t $(state_to_string(opt.compliance))\t error: $(ifelse(error == Inf, "-", error))"
+    s = "Iteration: $(opt.iter)\t $(obj(opt.compliance))\t error: $(ifelse(error == Inf, "-", error))"
     return s
 end
 
