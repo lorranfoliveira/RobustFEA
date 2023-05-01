@@ -34,12 +34,17 @@ mutable struct Optimizer
 
     output::Output
 
+    apply_filter::Bool
+    optimize_after_filter::Bool
+
     function Optimizer(compliance::T; volume_max::Float64=1.0, 
                                       adaptive_move::Bool=true, 
                                       min_iters::Int64=10,
                                       max_iters::Int64=5000, 
                                       x_min::Float64=0.0, 
                                       tol::Float64=1e-6,
+                                      apply_filter::Bool=true,
+                                      optimize_after_filter::Bool=true,
                                       filename::String="output.json") where T<:Compliance
 
         els_len = [len(el) for el in compliance.base.structure.elements]
@@ -85,7 +90,9 @@ mutable struct Optimizer
             df_obj_km2,
             df_vol_init,
             vol,
-            output)
+            output,
+            apply_filter,
+            optimize_after_filter)
     end
 end
 
@@ -184,9 +191,18 @@ function optimize!(opt::Optimizer)
 
         error = ifelse(opt.iter <= opt.min_iters, Inf, norm((opt.x_k - opt.x_km1) ./ (1 .+ opt.x_km1)))
 
-        @info state_to_string(opt, error)
+        @info "Iteration: $(opt.iter)\t $(obj(opt.compliance))\t vol: $(opt.vol)\t error: $(ifelse(error == Inf, "-", error))"
 
         opt.iter += 1
+    end
+
+    if opt.apply_filter
+        filter!(opt)
+        
+        if opt.optimize_after_filter
+            opt.apply_filter = false
+            optimize!(opt)
+        end
     end
 
     # Results to json
@@ -194,10 +210,81 @@ function optimize!(opt::Optimizer)
     save_json(opt.output)
 end
 
-function state_to_string(opt::Optimizer, error::Float64)
-    s = "Iteration: $(opt.iter)\t $(obj(opt.compliance))\t error: $(ifelse(error == Inf, "-", error))"
-    return s
+function remove_thin_bars(opt::Optimizer)
+    @info "================== Removing thin bars =================="
+
+    removed_els = [i for i=eachindex(opt.x_k) if opt.x_k[i] ≈ 0.0]
+
+    deleteat!(opt.compliance.base.structure.elements, removed_els)
+    deleteat!(opt.x_k, removed_els)
+    deleteat!(opt.x_km1, removed_els)
+    deleteat!(opt.x_km2, removed_els)
+    deleteat!(opt.df_obj_k, removed_els)
+    deleteat!(opt.df_obj_km1, removed_els)
+    deleteat!(opt.df_obj_km2, removed_els)
+    deleteat!(opt.move, removed_els)
+
+    new_nodes::Vector{Node} = []
+    nd_id = 1
+    for (el_id, el) in enumerate(opt.compliance.base.structure.elements)
+        el.id = el_id
+        for node in el.nodes
+            if node ∉ new_nodes
+                node.id = nd_id 
+                nd_id += 1
+                push!(new_nodes, node)
+            end
+        end
+    end
+
+    opt.compliance.base.structure = Structure(new_nodes, opt.compliance.base.structure.elements)
+    set_areas(opt)
 end
 
+function filter!(opt::Optimizer; c_tol::Float64=1.0, ρ::Float64=1e-4)
+    @info "================== Applying filter =================="
+    x_old = opt.x_k[:]
+    c_old = opt.compliance.base.obj_k
 
-# TODO: Create a class Data to store the data of the optimization each iteration. Save in json.
+    α₀ = 0.0
+    α₁ = 1.0
+    α_old = 0.0
+    Δα = 1.0
+
+    Δc = 2 * c_tol
+
+    i = 1
+    while Δα > 1e-4
+        α = (α₀ + α₁) / 2
+        norm_x = opt.x_k / maximum(opt.x_k)
+        opt.x_k[[ind for ind=eachindex(norm_x) if norm_x[ind] < α]] .= 0.0
+        set_areas(opt)
+
+        f = forces(opt.compliance.base.structure, include_restricted=true)
+        disp = u(opt.compliance.base.structure)
+        r = norm(K(opt.compliance.base.structure)*disp - f) / norm(f)
+
+        c = opt.compliance.base.obj_k = obj(opt.compliance, recalculate_eigenvals=true)
+        Δc = (c - c_old) / c_old
+
+        if r ≤ ρ && Δc < c_tol
+            x_old = opt.x_k[:]
+            Δα = abs(α_old - α)
+            α_old = α
+            α₀ = α
+            c_old = c
+        else
+            opt.x_k = x_old[:]
+            α₁ = α
+        end
+
+
+        @info "i: $i \tα: $α \tc: $c \tr: $r \tΔc: $Δc"
+
+        i += 1
+    end
+
+    remove_thin_bars(opt)    
+
+    @info "==============================================================="
+end

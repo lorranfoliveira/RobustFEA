@@ -22,6 +22,9 @@ function diff_obj(compliance::ComplianceSmoothPNorm)
     return (df_pnorm' * diff_eigenvals(compliance.base))'
 end
 
-function obj(compliance::ComplianceSmoothPNorm)
+function obj(compliance::ComplianceSmoothPNorm; recalculate_eigenvals::Bool=false)
+    if recalculate_eigenvals
+        calculate_C_eigenvals_and_eigenvecs(compliance.base)
+    end
     return norm(compliance.base.eig_vals, compliance.p)
 end
