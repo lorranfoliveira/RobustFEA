@@ -5,17 +5,17 @@ include("src/otm/otm.jl")
 include("src/fea/fea.jl")
 
 
-builder = StructureBuilder(8.0, 4.0, 5, 5, Material(1, 1.0))
+builder = StructureBuilder(8.0, 4.0, 11, 11, Material(1, 1.0))
 structure = build(builder)
 
-restrict_nearest_node(structure, [0.0, 2.0], [true, true])
-restrict_nearest_node(structure, [8.0, 2.0], [true, true])
+restrict_nearest_node(structure, [0.0, 0.0], [true, true])
+restrict_nearest_node(structure, [0.0, 4.0], [true, true])
 
-load_nearest_node(structure, [4.0, 2.0], [1.0, 1.0])
+load_nearest_node(structure, [8.0, 0.0], [1.0, 1.0])
 
 compliance = ComplianceSmoothPNorm(structure)
 
-optimizer = Optimizer(compliance)
+optimizer = Optimizer(compliance, max_iters=10000)
 
 optimize!(optimizer)
 

@@ -34,12 +34,15 @@ mutable struct Optimizer
 
     output::Output
 
+    apply_filter::Bool
+
     function Optimizer(compliance::T; volume_max::Float64=1.0, 
                                       adaptive_move::Bool=true, 
                                       min_iters::Int64=10,
                                       max_iters::Int64=5000, 
                                       x_min::Float64=0.0, 
                                       tol::Float64=1e-6,
+                                      apply_filter::Bool=true,
                                       filename::String="output.json") where T<:Compliance
 
         els_len = [len(el) for el in compliance.base.structure.elements]
@@ -85,7 +88,8 @@ mutable struct Optimizer
             df_obj_km2,
             df_vol_init,
             vol,
-            output)
+            output,
+            apply_filter)
     end
 end
 
@@ -189,6 +193,10 @@ function optimize!(opt::Optimizer)
         opt.iter += 1
     end
 
+    if opt.apply_filter
+        filter!(opt)
+    end
+
     # Results to json
     opt.output.output_structure = OutputStructure(opt.compliance.base.structure)
     save_json(opt.output)
@@ -199,5 +207,81 @@ function state_to_string(opt::Optimizer, error::Float64)
     return s
 end
 
+function remove_thin_bars(opt::Optimizer)
+    @info "================== Removing thin bars =================="
 
-# TODO: Create a class Data to store the data of the optimization each iteration. Save in json.
+    removed_els = [i for i=eachindex(opt.x_k) if opt.x_k[i] ≈ 0.0]
+
+    deleteat!(opt.compliance.base.structure.elements, removed_els)
+    deleteat!(opt.x_k, removed_els)
+    deleteat!(opt.x_km1, removed_els)
+    deleteat!(opt.x_km2, removed_els)
+    deleteat!(opt.df_obj_k, removed_els)
+    deleteat!(opt.df_obj_km1, removed_els)
+    deleteat!(opt.df_obj_km2, removed_els)
+
+    new_nodes::Vector{Node} = []
+    nd_id = 1
+    for (el_id, el) in enumerate(opt.compliance.base.structure.elements)
+        el.id = el_id
+        for node in el.nodes
+            if node ∉ new_nodes
+                node.id = nd_id 
+                nd_id += 1
+                push!(new_nodes, node)
+            end
+        end
+    end
+
+    opt.compliance.base.structure = Structure(new_nodes, opt.compliance.base.structure.elements)
+    set_areas(opt)
+end
+
+function filter!(opt::Optimizer; c_tol::Float64=1.0, ρ::Float64=1e-4)
+    @info "================== Applying filter =================="
+    x_old = opt.x_k[:]
+    c_old = opt.compliance.base.obj_k
+
+    α₀ = 0.0
+    α₁ = 1.0
+    α = (α₀ + α₁) / 2
+    α_eq = 0.0
+    Δα_eq = 1.0
+
+    Δc = 2 * c_tol
+
+    i = 1
+    while Δα_eq > 1e-4
+        norm_x = opt.x_k / maximum(opt.x_k)
+        opt.x_k[[ind for ind=eachindex(norm_x) if norm_x[ind] < α]] .= 0.0
+        set_areas(opt)
+
+        f = forces(opt.compliance.base.structure, include_restricted=true)
+        disp = u(opt.compliance.base.structure)
+        r = norm(K(opt.compliance.base.structure)*disp - f) / norm(f)
+
+        c = opt.compliance.base.obj_k = obj(opt.compliance, recalculate_eigenvals=true)
+        Δc = (c - c_old) / c_old
+
+        if r ≤ ρ && Δc < c_tol
+            x_old = opt.x_k[:]
+            Δα_eq = abs(α_eq - α)
+            α_eq = α
+            α₀ = α
+            c_old = c
+        else
+            opt.x_k = x_old[:]
+            α₁ = α
+        end
+
+        α = (α₀ + α₁) / 2
+
+        @info "i: $i \tα₀: $α₀ \tα: $α \tα₁: $α₁ \tc: $c \tr: $r \tΔc: $Δc"
+
+        i += 1
+    end
+
+    remove_thin_bars(opt)    
+
+    @info "==============================================================="
+end
