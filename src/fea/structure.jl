@@ -27,7 +27,7 @@ mutable struct Structure
     elements::Vector{Element}
     tikhonov::Float64
 
-    function Structure(nodes::Vector{Node}, elements::Vector{Element}; tikhonov::Float64=1e-9)
+    function Structure(nodes::Vector{Node}, elements::Vector{Element}; tikhonov::Float64=1e-12)
         if length(nodes) < 1
             throw(ArgumentError("There must be at least one node."))
         end

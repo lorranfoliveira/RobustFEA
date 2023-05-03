@@ -182,12 +182,12 @@ function optimize!(opt::Optimizer)
         update_x!(opt)
         opt.compliance.base.obj_k = obj(opt.compliance)
         
-        if opt.output.output_iterations === nothing
-            opt.output.output_iterations = [OutputIteration(opt.iter, opt.x_k, opt.compliance.base.obj_k, opt.vol)]
-        else
-            push!(opt.output.output_iterations, 
-            OutputIteration(opt.iter, opt.x_k, opt.compliance.base.obj_k, opt.vol))
-        end
+        #if opt.output.output_iterations === nothing
+        #    opt.output.output_iterations = [OutputIteration(opt.iter, opt.x_k, opt.compliance.base.obj_k, opt.vol)]
+        #else
+        #    push!(opt.output.output_iterations, 
+        #    OutputIteration(opt.iter, opt.x_k, opt.compliance.base.obj_k, opt.vol))
+        #end
 
         error = ifelse(opt.iter <= opt.min_iters, Inf, norm((opt.x_k - opt.x_km1) ./ (1 .+ opt.x_km1)))
 
@@ -241,7 +241,7 @@ function remove_thin_bars(opt::Optimizer)
     set_areas(opt)
 end
 
-function filter!(opt::Optimizer; c_tol::Float64=1.0, ρ::Float64=1e-4)
+function filter!(opt::Optimizer; c_tol::Float64=0.01, ρ::Float64=1e-4)
     @info "================== Applying filter =================="
     x_old = opt.x_k[:]
     c_old = opt.compliance.base.obj_k
@@ -257,7 +257,7 @@ function filter!(opt::Optimizer; c_tol::Float64=1.0, ρ::Float64=1e-4)
     while Δα > 1e-4
         α = (α₀ + α₁) / 2
         norm_x = opt.x_k / maximum(opt.x_k)
-        opt.x_k[[ind for ind=eachindex(norm_x) if norm_x[ind] < α]] .= 0.0
+        opt.x_k[[ind for ind=eachindex(norm_x) if norm_x[ind] <= α]] .= 0.0
         set_areas(opt)
 
         f = forces(opt.compliance.base.structure, include_restricted=true)

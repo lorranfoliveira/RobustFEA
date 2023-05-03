@@ -4,24 +4,25 @@ include("src/builder/builder.jl")
 include("src/otm/otm.jl")
 include("src/fea/fea.jl")
 
-nx = 5
-ny = 5
-lx = 8.0
-ly = 4.0
+nx = 7
+ny = 37
+lx = 2.0
+ly = 6.0
 
-builder = StructureBuilder(lx, ly, nx, ny, Material(1, 1.0))
+builder = StructureBuilder(lx, ly, nx, ny, Material(1, 1e6), connectivity_level=6)
 structure = build(builder)
 
-restrict_nearest_node(structure, [0.0, 0.0], [true, true])
-restrict_nearest_node(structure, [8.0, 0.0], [true, true])
+for i=1:nx
+    restrict_nearest_node(structure, [(i-1)*(lx/(nx-1)), 0.0], [true, true])
+end
 
-load_nearest_node(structure, [lx/2, ly/2], [1.0, 1.0])
+load_nearest_node(structure, [lx/2, ly], [1.0, 5.0])
 
-compliance = ComplianceSmoothPNorm(structure)
+compliance = ComplianceSmoothMu(structure)
 
-#vol = 0.05*lx*ly*1/450
-vol = 1.0
-optimizer = Optimizer(compliance, max_iters=1000, volume_max=vol)
+vol = 0.05*lx*ly*1/450
+#vol = 1.0
+optimizer = Optimizer(compliance, max_iters=5000, volume_max=vol, apply_filter=true)
 
 optimize!(optimizer)
 

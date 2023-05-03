@@ -7,30 +7,33 @@ mutable struct StructureBuilder
     ly::Float64
     nx::Int64
     ny::Int64
+    connectivity_level::Int64
     material::Material
     nodes_matrix::Matrix{Float64}
     elements_matrix::Matrix{Int64}
 
-    function StructureBuilder(lx::Float64, ly::Float64, nx::Int64, ny::Int64, material::Material)
+    function StructureBuilder(lx::Float64, ly::Float64, nx::Int64, ny::Int64, material::Material; connectivity_level::Int64=2)
         nodes_matrix = zeros(Float64, nx * ny, 2)
         elements_matrix = zeros(Int64, 0, 2)
-        new(lx, ly, nx, ny, material, nodes_matrix, elements_matrix)
+        new(lx, ly, nx, ny, connectivity_level, material, nodes_matrix, elements_matrix)
     end
 end
+
+dx(builder::StructureBuilder) = builder.lx / (builder.nx - 1)
+
+dy(builder::StructureBuilder) = builder.ly / (builder.ny - 1)
 
 function build_nodes!(builder::StructureBuilder)
     lx = builder.lx
     ly = builder.ly
     nx = builder.nx
     ny = builder.ny
-    dx = lx / (nx - 1)
-    dy = ly / (ny - 1)
 
     k = 1
     for i in 1:ny
         for j in 1:nx
-            builder.nodes_matrix[k, 1] = (j - 1) * dx
-            builder.nodes_matrix[k, 2] = (i - 1) * dy
+            builder.nodes_matrix[k, 1] = (j - 1) * dx(builder)
+            builder.nodes_matrix[k, 2] = (i - 1) * dy(builder)
             k += 1
         end
     end
@@ -77,9 +80,16 @@ function is_overlap(builder::StructureBuilder, element1::Vector{Int64}, element2
 end
 
 function build_elements!(builder::StructureBuilder)
+    @info "================== Building ground structure =================="
+
+    level = builder.connectivity_level
     sz_nodes = size(builder.nodes_matrix)[1]
+
     for node_ref=1:sz_nodes
-        for node=1:sz_nodes
+        node_ref_pos = builder.nodes_matrix[node_ref, :]
+        node_min = max(1, node_ref - (level * nx + Int64(round(node_ref_pos[1] / dx(builder)))))
+        node_max = min(builder.nx * builder.ny, node_ref + (level * builder.nx + builder.nx - 1 - Int64(round(node_ref_pos[1] / dx(builder)))))
+        for node=node_min:node_max
             if node != node_ref
                 el_ref = [node_ref, node]
                 sz_els_matrix = size(builder.elements_matrix)[1]
@@ -105,6 +115,8 @@ function build_elements!(builder::StructureBuilder)
                 end
             end
         end 
+
+        @info "Building ground structure: $(round(node_ref / sz_nodes * 100, digits=2))%"
     end
 end
 

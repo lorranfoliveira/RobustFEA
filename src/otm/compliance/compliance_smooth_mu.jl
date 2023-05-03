@@ -5,7 +5,7 @@ struct ComplianceSmoothMu <: ComplianceSmooth
     base::BaseCompliance
     β::Float64
 
-    function ComplianceSmoothMu(structure::Structure; β::Float64=5e-2)
+    function ComplianceSmoothMu(structure::Structure; β::Float64=0.1)
         new(BaseCompliance(structure), β)
     end
 end
@@ -30,7 +30,10 @@ function diff_obj(compliance::ComplianceSmoothMu)
     return (df_mu' * diff_eigenvals(compliance.base))'
 end
 
-function obj(compliance::ComplianceSmoothMu)
+function obj(compliance::ComplianceSmoothMu; recalculate_eigenvals::Bool=false)
+    if recalculate_eigenvals
+        calculate_C_eigenvals_and_eigenvecs(compliance.base)
+    end
     c = compliance.base.eig_vals
     mu = μ(compliance)
 
