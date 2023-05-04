@@ -33,7 +33,7 @@ function build_nodes!(builder::StructureBuilder)
     for i in 1:ny
         for j in 1:nx
             builder.nodes_matrix[k, 1] = (j - 1) * dx(builder)
-            builder.nodes_matrix[k, 2] = (i - 1) * dy(builder)
+            builder.nodes_matrix[k, 2] = builder.ly - (i - 1) * dy(builder)
             k += 1
         end
     end
@@ -83,40 +83,45 @@ function build_elements!(builder::StructureBuilder)
     @info "================== Building ground structure =================="
 
     level = builder.connectivity_level
-    sz_nodes = size(builder.nodes_matrix)[1]
-
-    for node_ref=1:sz_nodes
-        node_ref_pos = builder.nodes_matrix[node_ref, :]
-        node_min = max(1, node_ref - (level * nx + Int64(round(node_ref_pos[1] / dx(builder)))))
-        node_max = min(builder.nx * builder.ny, node_ref + (level * builder.nx + builder.nx - 1 - Int64(round(node_ref_pos[1] / dx(builder)))))
-        for node=node_min:node_max
-            if node != node_ref
-                el_ref = [node_ref, node]
-                sz_els_matrix = size(builder.elements_matrix)[1]
-
-                if sz_els_matrix == 0
-                    builder.elements_matrix = vcat(builder.elements_matrix, el_ref')
-                    continue
-                end
-                
-                overlaps = false
-                for el2_id=1:sz_els_matrix
-                    el2 = builder.elements_matrix[el2_id, :]
-
-                    if is_overlap(builder, el_ref, el2)
-                        overlaps = true
-                        break
+    n = builder.nx * builder.ny
+    grid = reshape(1:n, (builder.nx, builder.ny))'
+    c = 1
+    for i=1:builder.ny
+        for j=1:builder.nx
+            node_ref = grid[i, j]
+            for ii=max(1, i - level):min(builder.ny, i + level)
+                for jj=max(1, j - level):min(builder.nx, j + level)
+                    node = grid[ii, jj]
+                    if node_ref != node
+                        el_ref = [node_ref, node]
+                        sz_els_matrix = size(builder.elements_matrix)[1]
+        
+                        if sz_els_matrix == 0
+                            builder.elements_matrix = vcat(builder.elements_matrix, el_ref')
+                            continue
+                        end
+                        
+                        overlaps = false
+                        for el2_id=1:sz_els_matrix
+                            el2 = builder.elements_matrix[el2_id, :]
+        
+                            if is_overlap(builder, el_ref, el2)
+                                overlaps = true
+                                break
+                            end
+        
+                        end
+                        
+                        if !overlaps
+                            builder.elements_matrix = vcat(builder.elements_matrix, el_ref')
+                        end
                     end
-
-                end
-                
-                if !overlaps
-                    builder.elements_matrix = vcat(builder.elements_matrix, el_ref')
                 end
             end
-        end 
-
-        @info "Building ground structure: $(round(node_ref / sz_nodes * 100, digits=2))%"
+            # take only 2 decimals
+            @info "Progress: $(round(c / n * 100, digits=2)) %"
+            c += 1
+        end
     end
 end
 

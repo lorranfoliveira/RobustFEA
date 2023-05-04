@@ -34,16 +34,16 @@ mutable struct Optimizer
 
     output::Output
 
-    apply_filter::Bool
+    filter_tol::Float64
     optimize_after_filter::Bool
 
     function Optimizer(compliance::T; volume_max::Float64=1.0, 
                                       adaptive_move::Bool=true, 
-                                      min_iters::Int64=10,
+                                      min_iters::Int64=5,
                                       max_iters::Int64=5000, 
                                       x_min::Float64=0.0, 
                                       tol::Float64=1e-6,
-                                      apply_filter::Bool=true,
+                                      filter_tol::Float64=1.0,
                                       optimize_after_filter::Bool=true,
                                       filename::String="output.json") where T<:Compliance
 
@@ -91,7 +91,7 @@ mutable struct Optimizer
             df_vol_init,
             vol,
             output,
-            apply_filter,
+            filter_tol,
             optimize_after_filter)
     end
 end
@@ -196,11 +196,11 @@ function optimize!(opt::Optimizer)
         opt.iter += 1
     end
 
-    if opt.apply_filter
+    if opt.filter_tol > 0.0
         filter!(opt)
         
         if opt.optimize_after_filter
-            opt.apply_filter = false
+            opt.filter_tol = 0.0
             optimize!(opt)
         end
     end
@@ -241,7 +241,7 @@ function remove_thin_bars(opt::Optimizer)
     set_areas(opt)
 end
 
-function filter!(opt::Optimizer; c_tol::Float64=0.01, ρ::Float64=1e-4)
+function filter!(opt::Optimizer; c_tol::Float64=1.0, ρ::Float64=1e-8)
     @info "================== Applying filter =================="
     x_old = opt.x_k[:]
     c_old = opt.compliance.base.obj_k
@@ -260,11 +260,13 @@ function filter!(opt::Optimizer; c_tol::Float64=0.01, ρ::Float64=1e-4)
         opt.x_k[[ind for ind=eachindex(norm_x) if norm_x[ind] <= α]] .= 0.0
         set_areas(opt)
 
-        f = forces(opt.compliance.base.structure, include_restricted=true)
-        disp = u(opt.compliance.base.structure)
+        c = opt.compliance.base.obj_k = obj(opt.compliance, recalculate_eigenvals=true)
+
+        f = H(compliance.base) * compliance.base.eig_vecs[:,1]
+
+        disp = K(opt.compliance.base.structure) \ f
         r = norm(K(opt.compliance.base.structure)*disp - f) / norm(f)
 
-        c = opt.compliance.base.obj_k = obj(opt.compliance, recalculate_eigenvals=true)
         Δc = (c - c_old) / c_old
 
         if r ≤ ρ && Δc < c_tol
