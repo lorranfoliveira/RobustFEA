@@ -30,9 +30,16 @@ function diff_obj(compliance::ComplianceSmoothMu)
     return (df_mu' * diff_eigenvals(compliance.base))'
 end
 
-function obj(compliance::ComplianceSmoothMu)
+function obj(compliance::ComplianceSmoothMu; recalculate_eigenvals::Bool=false)
+    if recalculate_eigenvals
+        calculate_C_eigenvals_and_eigenvecs(compliance.base)
+    end
     c = compliance.base.eig_vals
     mu = μ(compliance)
 
     return (sqrt(mu^2 + (c[1] - c[2])^2) + c[1] + c[2])/2
+end
+
+function state_to_string(compliance::ComplianceSmoothMu)
+    return "obj: $(obj(compliance))\t β: $(compliance.β)"
 end

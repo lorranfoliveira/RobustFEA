@@ -19,11 +19,11 @@ Defines an Element.
 """
 mutable struct Element
     id::Int64
-    area::Float64
     nodes::Vector{Node}
     material::Material
+    area::Float64
 
-    function Element(id::Int64, area::Float64, nodes::Vector{Node}, material::Material)
+    function Element(id::Int64, nodes::Vector{Node}, material::Material, area::Float64=1.0)
         if id < 1
             throw(ArgumentError("Id must be a positive integer."))
         end
@@ -40,7 +40,7 @@ mutable struct Element
             throw(ArgumentError("Element nodes must be different."))
         end
 
-        new(id, area, nodes, material)
+        new(id, nodes, material, area)
     end
 end
 
