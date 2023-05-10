@@ -6,16 +6,18 @@ include("output_iteration.jl")
 
 mutable struct Output
     filename::String
+    input_structure::Union{OutputStructure, Nothing}
     output_structure::Union{OutputStructure, Nothing}
     output_compliance::Union{OutputCompliance, Nothing}
     output_iterations::Union{Vector{OutputIteration}, Nothing}
 
     function Output(filename::String="output.json",
+        input_structure::Union{OutputStructure, Nothing}=nothing,
         output_structure::Union{OutputStructure, Nothing}=nothing,
         output_compliance::Union{OutputCompliance, Nothing}=nothing,
         output_iterations::Union{Vector{OutputIteration}, Nothing}=nothing)
         
-        new(filename, output_structure, output_compliance, output_iterations)
+        new(filename, input_structure, output_structure, output_compliance, output_iterations)
     end
 end
 

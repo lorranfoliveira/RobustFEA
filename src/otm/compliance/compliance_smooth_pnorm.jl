@@ -30,21 +30,3 @@ function obj(compliance::ComplianceSmoothPNorm; recalculate_eigenvals::Bool=fals
     end
     return norm(compliance.base.eig_vals, compliance.p)
 end
-
-function update_smooth_parameter!(compliance::ComplianceSmoothPNorm)
-    p_tmp = compliance.p
-    base = compliance.base
-
-    term = (base.obj_k - base.obj_km1) * (base.obj_km1 - base.obj_km2)
-    if term < 0
-        p_tmp = 0.9 * compliance.p
-    elseif term > 0
-        p_tmp = 1.1 * compliance.p
-    end
-
-    compliance.p = max(compliance.p_min, min(p_tmp, compliance.p_max))
-end
-
-function state_to_string(compliance::ComplianceSmoothPNorm)
-    return "obj: $(compliance.base.obj_k)\t p: $(compliance.p)"
-end

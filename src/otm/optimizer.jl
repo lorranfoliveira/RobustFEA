@@ -69,6 +69,7 @@ mutable struct Optimizer
 
         # Create output
         output = Output(filename)
+        output.input_structure = OutputStructure(compliance.base.structure)
 
         new(compliance, 
             volume_max,
@@ -260,9 +261,11 @@ function filter!(opt::Optimizer; c_tol::Float64=1.0, ρ::Float64=1e-8)
         opt.x_k[[ind for ind=eachindex(norm_x) if norm_x[ind] <= α]] .= 0.0
         set_areas(opt)
 
-        c = opt.compliance.base.obj_k = obj(opt.compliance, recalculate_eigenvals=true)
+        #c = opt.compliance.base.obj_k = obj(opt.compliance, recalculate_eigenvals=true)
+        c = opt.compliance.base.obj_k = obj(opt.compliance)
 
-        f = H(compliance.base) * compliance.base.eig_vecs[:,1]
+        #f = H(compliance.base) * compliance.base.eig_vecs[:,1]
+        f = forces(opt.compliance.base.structure, include_restricted=true)
 
         disp = K(opt.compliance.base.structure) \ f
         r = norm(K(opt.compliance.base.structure)*disp - f) / norm(f)

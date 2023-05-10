@@ -12,20 +12,21 @@ struct JsonReader
 end
 
 # ========= structure =========
-function structure_data(reader::JsonReader)::Dict
-    return reader.data["output_structure"]
+function structure_data(reader::JsonReader, key::String)::Dict
+    #key = "input_structure" or "output_structure"
+    return reader.data[key]
 end
 
-function nodes_data(reader::JsonReader)::Vector{Vector{Float64}}
-    return convert(Vector{Vector{Float64}}, structure_data(reader)["nodes"])
+function nodes_data(reader::JsonReader, key::String)::Vector{Vector{Float64}}
+    return convert(Vector{Vector{Float64}}, structure_data(reader, key)["nodes"])
 end
 
-function elements_data(reader::JsonReader)::Vector{Vector{Int64}}
-    return convert(Vector{Vector{Int64}}, structure_data(reader)["elements"])
+function elements_data(reader::JsonReader, key::String)::Vector{Vector{Int64}}
+    return convert(Vector{Vector{Int64}}, structure_data(reader, key)["elements"])
 end
 
-function final_areas_data(reader::JsonReader)::Vector{Float64}
-    return convert(Vector{Float64}, structure_data(reader)["areas_of_elements"])
+function areas_data(reader::JsonReader, key::String)::Vector{Float64}
+    return convert(Vector{Float64}, structure_data(reader, key)["areas_of_elements"])
 end
 
 # ========= iterations

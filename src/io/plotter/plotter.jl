@@ -16,10 +16,10 @@ function plot_compliance(plt::Plotter)
     sleep(1e6)
 end
 
-function plot_optimized_structure(plt::Plotter, scale::Float64=1.0)
-    els = elements_data(plt.data)
-    nodes = nodes_data(plt.data)
-    areas = normalize(final_areas_data(plt.data))
+function plot_structure(plt::Plotter, key::String="output_structure", scale::Float64=1.0)
+    els = elements_data(plt.data, key)
+    nodes = nodes_data(plt.data, key)
+    areas = normalize(areas_data(plt.data, key))
     
     p = plot()
 

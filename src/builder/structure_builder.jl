@@ -7,15 +7,17 @@ mutable struct StructureBuilder
     ly::Float64
     nx::Int64
     ny::Int64
-    connectivity_level::Int64
+    connectivity_ratio::Float64
     material::Material
     nodes_matrix::Matrix{Float64}
     elements_matrix::Matrix{Int64}
 
-    function StructureBuilder(lx::Float64, ly::Float64, nx::Int64, ny::Int64, material::Material; connectivity_level::Int64=2)
+    function StructureBuilder(lx::Float64, ly::Float64, nx::Int64, ny::Int64, material::Material; connectivity_ratio::Float64=Inf)
         nodes_matrix = zeros(Float64, nx * ny, 2)
         elements_matrix = zeros(Int64, 0, 2)
-        new(lx, ly, nx, ny, connectivity_level, material, nodes_matrix, elements_matrix)
+        ef_ratio = max(connectivity_ratio, (1.0 + 1e-10) * sqrt(lx^2 + ly^2))
+
+        new(lx, ly, nx, ny, ef_ratio, material, nodes_matrix, elements_matrix)
     end
 end
 
@@ -81,48 +83,43 @@ end
 
 function build_elements!(builder::StructureBuilder)
     @info "================== Building ground structure =================="
-
-    level = builder.connectivity_level
     n = builder.nx * builder.ny
-    grid = reshape(1:n, (builder.nx, builder.ny))'
-    c = 1
-    for i=1:builder.ny
-        for j=1:builder.nx
-            node_ref = grid[i, j]
-            for ii=max(1, i - level):min(builder.ny, i + level)
-                for jj=max(1, j - level):min(builder.nx, j + level)
-                    node = grid[ii, jj]
-                    if node_ref != node
-                        el_ref = [node_ref, node]
-                        sz_els_matrix = size(builder.elements_matrix)[1]
-        
-                        if sz_els_matrix == 0
-                            builder.elements_matrix = vcat(builder.elements_matrix, el_ref')
-                            continue
+    for i=1:n
+        for j=1:n
+            if i != j
+                dist = norm(builder.nodes_matrix[i, :] - builder.nodes_matrix[j, :])
+                if dist ≤ builder.connectivity_ratio
+                    el_ref = [i, j]
+                    sz_els_matrix = size(builder.elements_matrix)[1]
+
+                    if sz_els_matrix == 0
+                        builder.elements_matrix = vcat(builder.elements_matrix, el_ref')
+                        continue
+                    end
+                    
+                    overlaps = false
+                    for el2_id=1:sz_els_matrix
+                        el2 = builder.elements_matrix[el2_id, :]
+
+                        if is_overlap(builder, el_ref, el2)
+                            overlaps = true
+                            break
                         end
-                        
-                        overlaps = false
-                        for el2_id=1:sz_els_matrix
-                            el2 = builder.elements_matrix[el2_id, :]
-        
-                            if is_overlap(builder, el_ref, el2)
-                                overlaps = true
-                                break
-                            end
-        
-                        end
-                        
-                        if !overlaps
-                            builder.elements_matrix = vcat(builder.elements_matrix, el_ref')
-                        end
+
+                    end
+                    
+                    if !overlaps
+                        builder.elements_matrix = vcat(builder.elements_matrix, el_ref')
                     end
                 end
             end
-            # take only 2 decimals
-            @info "Progress: $(round(c / n * 100, digits=2)) %"
-            c += 1
+            @info "Progress: $(round((n * (i - 1) + j) / (n^2) * 100, digits=3)) %"
         end
     end
+
+    @info "----------------------------------------------------------------------"
+    @info "Ground Structure built with $(size(builder.elements_matrix)[1]) elements and $(size(builder.nodes_matrix)[1]) nodes!\n"
+    @info "----------------------------------------------------------------------"
 end
 
 function build(builder::StructureBuilder)::Structure

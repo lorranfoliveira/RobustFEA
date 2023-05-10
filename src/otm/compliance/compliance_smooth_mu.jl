@@ -39,7 +39,3 @@ function obj(compliance::ComplianceSmoothMu; recalculate_eigenvals::Bool=false)
 
     return (sqrt(mu^2 + (c[1] - c[2])^2) + c[1] + c[2])/2
 end
-
-function state_to_string(compliance::ComplianceSmoothMu)
-    return "obj: $(obj(compliance))\t β: $(compliance.β)"
-end
