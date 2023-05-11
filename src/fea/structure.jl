@@ -65,11 +65,35 @@ function load_nearest_node(structure::Structure, position::Vector{Float64}, forc
     structure.nodes[nearest_node_id(structure, position)].force = force
 end
 
+function load_nearest_nodes_inline_x(structure::Structure, lx::Float64, nx::Int64, y::Float64, force::Vector{Float64})
+    for i=1:nx
+        load_nearest_node(structure, [(i - 1)*(lx/(nx - 1)), y], force)
+    end
+end
+
+function load_nearest_nodes_inline_y(structure::Structure, ly::Float64, ny::Int64, x::Float64, force::Vector{Float64})
+    for i=1:ny
+        load_nearest_node(structure, [x, (i - 1)*(ly/(ny - 1))], force)
+    end
+end
+
 """
 Set the given constraint to the closest node to the given position.
 """
 function restrict_nearest_node(structure::Structure, position::Vector{Float64}, constraint::Vector{Bool})
     structure.nodes[nearest_node_id(structure, position)].constraint = constraint
+end
+
+function restrict_nearest_nodes_inline_x(structure::Structure, lx::Float64, nx::Int64, y::Float64, constraint::Vector{Bool})
+    for i=1:nx
+        restrict_nearest_node(structure, [(i - 1)*(lx/(nx - 1)), y], constraint)
+    end
+end
+
+function restrict_nearest_nodes_inline_y(structure::Structure, ly::Float64, ny::Int64, x::Float64, constraint::Vector{Bool})
+    for i=1:ny
+        restrict_nearest_node(structure, [x, (i - 1)*(ly/(ny - 1))], constraint)
+    end
 end
 
 """

@@ -190,18 +190,27 @@ function optimize!(opt::Optimizer)
         #    OutputIteration(opt.iter, opt.x_k, opt.compliance.base.obj_k, opt.vol))
         #end
 
-        error = ifelse(opt.iter <= opt.min_iters, Inf, norm((opt.x_k - opt.x_km1) ./ (1 .+ opt.x_km1)))
+        error = ifelse(opt.iter <= opt.min_iters, Inf, norm((opt.x_k - opt.x_km1) ./ (1 .+ opt.x_km1), Inf))
 
         @info "Iteration: $(opt.iter)\t $(obj(opt.compliance))\t vol: $(opt.vol)\t error: $(ifelse(error == Inf, "-", error))"
 
         opt.iter += 1
     end
 
+    @info "================== Optimization finished =================="
+    @info "Final compliance: $(obj(opt.compliance))"
+    @info "Final volume: $(opt.vol)"
+    @info "Final error: $(error)"
+    @info "Number of iterations: $(opt.iter)"
+    @info "Number of elements: $(length(opt.x_k))"
+    @info "Number of nodes: $(length(opt.compliance.base.structure.nodes))"
+
     if opt.filter_tol > 0.0
         filter!(opt)
         
         if opt.optimize_after_filter
             opt.filter_tol = 0.0
+
             optimize!(opt)
         end
     end
@@ -212,7 +221,7 @@ function optimize!(opt::Optimizer)
 end
 
 function remove_thin_bars(opt::Optimizer)
-    @info "================== Removing thin bars =================="
+    @info "================== Removing thin elements =================="
 
     removed_els = [i for i=eachindex(opt.x_k) if opt.x_k[i] ≈ 0.0]
 
@@ -238,11 +247,14 @@ function remove_thin_bars(opt::Optimizer)
         end
     end
 
+    @info "Elements removed: $(length(removed_els))"
+    @info "Nodes removed: $(length(opt.compliance.base.structure.nodes) - length(new_nodes))"
+
     opt.compliance.base.structure = Structure(new_nodes, opt.compliance.base.structure.elements)
     set_areas(opt)
 end
 
-function filter!(opt::Optimizer; c_tol::Float64=1.0, ρ::Float64=1e-8)
+function filter!(opt::Optimizer; c_tol::Float64=0.01, ρ::Float64=1e-8)
     @info "================== Applying filter =================="
     x_old = opt.x_k[:]
     c_old = opt.compliance.base.obj_k
@@ -254,6 +266,12 @@ function filter!(opt::Optimizer; c_tol::Float64=1.0, ρ::Float64=1e-8)
 
     Δc = 2 * c_tol
 
+    if typeof(opt.compliance) <: ComplianceSmooth
+        f = H(compliance.base) * compliance.base.eig_vecs[:,end]
+    else
+        f = forces(opt.compliance.base.structure, include_restricted=true)
+    end
+
     i = 1
     while Δα > 1e-4
         α = (α₀ + α₁) / 2
@@ -261,11 +279,11 @@ function filter!(opt::Optimizer; c_tol::Float64=1.0, ρ::Float64=1e-8)
         opt.x_k[[ind for ind=eachindex(norm_x) if norm_x[ind] <= α]] .= 0.0
         set_areas(opt)
 
-        #c = opt.compliance.base.obj_k = obj(opt.compliance, recalculate_eigenvals=true)
-        c = opt.compliance.base.obj_k = obj(opt.compliance)
-
-        #f = H(compliance.base) * compliance.base.eig_vecs[:,1]
-        f = forces(opt.compliance.base.structure, include_restricted=true)
+        if typeof(opt.compliance) <: ComplianceSmooth
+            c = opt.compliance.base.obj_k = obj(opt.compliance, recalculate_eigenvals=true)
+        else
+            c = opt.compliance.base.obj_k = obj(opt.compliance)
+        end
 
         disp = K(opt.compliance.base.structure) \ f
         r = norm(K(opt.compliance.base.structure)*disp - f) / norm(f)

@@ -15,7 +15,7 @@ mutable struct StructureBuilder
     function StructureBuilder(lx::Float64, ly::Float64, nx::Int64, ny::Int64, material::Material; connectivity_ratio::Float64=Inf)
         nodes_matrix = zeros(Float64, nx * ny, 2)
         elements_matrix = zeros(Int64, 0, 2)
-        ef_ratio = max(connectivity_ratio, (1.0 + 1e-10) * sqrt(lx^2 + ly^2))
+        ef_ratio = max(connectivity_ratio, (1.0 + 1e-10) * sqrt((lx / (nx - 1))^2 + (ly / (ny - 1))^2))
 
         new(lx, ly, nx, ny, ef_ratio, material, nodes_matrix, elements_matrix)
     end
