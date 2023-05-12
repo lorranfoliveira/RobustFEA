@@ -4,11 +4,9 @@ include("../../../src/fea/structure.jl")
 mutable struct ComplianceSmoothPNorm <: ComplianceSmooth
     base::BaseCompliance
     p::Float64
-    p_min::Float64
-    p_max::Float64
 
-    function ComplianceSmoothPNorm(structure::Structure; p::Float64=5.0, p_min::Float64=5.0, p_max::Float64=20.0)
-        new(BaseCompliance(structure), p, p_min, p_max)
+    function ComplianceSmoothPNorm(structure::Structure; p::Float64=30.0)
+        new(BaseCompliance(structure), p)
     end
 end
 
