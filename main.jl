@@ -4,8 +4,8 @@ include("src/builder/builder.jl")
 include("src/otm/otm.jl")
 include("src/fea/fea.jl")
 
-nx = 7
-ny = 37
+nx = 5
+ny = 5
 lx = 2.0
 ly = 6.0
 

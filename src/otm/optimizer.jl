@@ -208,11 +208,11 @@ function optimize!(opt::Optimizer)
     if opt.filter_tol > 0.0
         filter!(opt)
         
-        if opt.optimize_after_filter
-            opt.filter_tol = 0.0
+        #if opt.optimize_after_filter
+        #    opt.filter_tol = 0.0
 
-            optimize!(opt)
-        end
+        #    optimize!(opt)
+        #end
     end
 
     # Results to json

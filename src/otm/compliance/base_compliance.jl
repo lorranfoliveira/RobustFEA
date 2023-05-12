@@ -75,13 +75,13 @@ end
 """
 Matrix that maps the complete forces vector to the loaded forces vector.
 """
-function H(base::BaseCompliance)
+function H(base::BaseCompliance)::Matrix{Float64}
     s = base.structure
     fl_dofs = free_loaded_dofs(s)
 
     f = forces(s; include_restricted=true)
     
-    h = spzeros(number_of_dofs(s), length(fl_dofs))
+    h = zeros(number_of_dofs(s), length(fl_dofs))
     
     c::Int64 = 1
     for i in fl_dofs
@@ -89,7 +89,7 @@ function H(base::BaseCompliance)
         c += 1
     end
 
-    return h
+    return h[dofs(structure),:]
 end
 
 """
@@ -116,7 +116,10 @@ diff_K(base::BaseCompliance)::Vector{SparseMatrixCSC{Float64}} = [diff_K(element
 Auxiliar matrix Z.
 """
 function Z(base::BaseCompliance)
-    return K(base.structure) \ H(base)
+    h = H(base)
+    z::Matrix{Float64} = zeros(number_of_dofs(base.structure), size(h)[2])
+    z[dofs(base.structure, include_restricted=false), :] = K(base.structure) \ H(base)
+    return z
 end
 
 """
@@ -124,7 +127,8 @@ Matrix where the eigenvalues are extracted from.
 """
 function C(base::BaseCompliance)::Matrix{Float64}
     z::Matrix{Float64} = Z(base)
-    return z' * K(base.structure) * z
+    df = dofs(base.structure, include_restricted=false)
+    return z[df,:]' * K(base.structure) * z[df,:]
 end 
 
 """
@@ -132,7 +136,7 @@ Derivative of C matrix.
 """
 function diff_C(base::BaseCompliance)
     g::Vector{Matrix{Float64}} = []
-    z::Matrix{Float64} = Z(base)
+    z = Z(base)
 
     for element in base.structure.elements
         ze::Matrix{Float64} = z[dofs(element, include_restricted=true), :]

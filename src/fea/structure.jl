@@ -145,7 +145,7 @@ Returns the stiffness matrix for the given structure.
 
 TODO: This is a naive implementation. It should be improved.
 """
-function K(structure::Structure)::Matrix{Float64}
+function K(structure::Structure)::SparseMatrixCSC{Float64}
     n = length(structure.elements) * 4^2
     rows = ones(Int64, n)
     cols = ones(Int64, n)
@@ -178,7 +178,8 @@ function K(structure::Structure)::Matrix{Float64}
 
     dropzeros!(k)
     
-    return k
+    df = dofs(structure)
+    return k[df, df]
 end
 
 """
