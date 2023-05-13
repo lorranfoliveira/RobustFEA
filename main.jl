@@ -4,10 +4,12 @@ include("src/builder/builder.jl")
 include("src/otm/otm.jl")
 include("src/fea/fea.jl")
 
-nx = 5
-ny = 5
+nx = 9
+ny = 9
 lx = 2.0
 ly = 6.0
+
+# Pegar as forças e testar com o filtro máximo aplicado nas duas direções em que as forças são máximas. Fazer isso para todos os casos
 
 builder = StructureBuilder(lx, ly, nx, ny, Material(1, 1.0), connectivity_ratio=Inf)
 structure = build(builder)

@@ -272,21 +272,19 @@ function filter!(opt::Optimizer; c_tol::Float64=0.01, ρ::Float64=1e-4)
         f = forces(opt.compliance.base.structure, include_restricted=true)
     end
 
+    disp = K(opt.compliance.base.structure) \ f
+
     i = 1
-    while Δα > 1e-8
+    while Δα > 1e-4
         α = (α₀ + α₁) / 2
         norm_x = opt.x_k / maximum(opt.x_k)
         opt.x_k[[ind for ind=eachindex(norm_x) if norm_x[ind] <= α]] .= 0.0
         set_areas(opt)
 
-        if typeof(opt.compliance) <: ComplianceSmooth
-            c = opt.compliance.base.obj_k = obj(opt.compliance, recalculate_eigenvals=true)
-        else
-            c = opt.compliance.base.obj_k = obj(opt.compliance)
-        end
-
-        disp = K(opt.compliance.base.structure) \ f
         r = norm(K(opt.compliance.base.structure)*disp - f) / norm(f)
+
+        #c1 = opt.compliance.base.obj_k = obj(opt.compliance, recalculate_eigenvals=true)
+        c = f' * disp
 
         Δc = (c - c_old) / c_old
 
