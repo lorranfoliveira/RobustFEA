@@ -35,7 +35,6 @@ mutable struct Optimizer
     output::Output
 
     filter_tol::Float64
-    optimize_after_filter::Bool
 
     function Optimizer(compliance::T; volume_max::Float64=1.0, 
                                       adaptive_move::Bool=true, 
@@ -44,7 +43,6 @@ mutable struct Optimizer
                                       x_min::Float64=0.0, 
                                       tol::Float64=1e-8,
                                       filter_tol::Float64=1.0,
-                                      optimize_after_filter::Bool=true,
                                       filename::String="output.json") where T<:Compliance
 
         els_len = [len(el) for el in compliance.base.structure.elements]
@@ -92,8 +90,7 @@ mutable struct Optimizer
             df_vol_init,
             vol,
             output,
-            filter_tol,
-            optimize_after_filter)
+            filter_tol)
     end
 end
 
@@ -205,12 +202,6 @@ function optimize!(opt::Optimizer)
 
     if opt.filter_tol > 0.0
         filter!(opt)
-        
-        #if opt.optimize_after_filter
-        #    opt.filter_tol = 0.0
-
-        #    optimize!(opt)
-        #end
     end
 
     # Results to json
@@ -222,8 +213,9 @@ function remove_thin_bars(opt::Optimizer)
     @info "================== Removing thin elements =================="
 
     removed_els = [i for i=eachindex(opt.x_k) if opt.x_k[i] ≈ 0.0]
+    elements = copy(opt.compliance.base.structure.elements)
 
-    deleteat!(opt.compliance.base.structure.elements, removed_els)
+    deleteat!(elements, removed_els)
     deleteat!(opt.x_k, removed_els)
     deleteat!(opt.x_km1, removed_els)
     deleteat!(opt.x_km2, removed_els)
@@ -234,7 +226,7 @@ function remove_thin_bars(opt::Optimizer)
 
     new_nodes::Vector{Node} = []
     nd_id = 1
-    for (el_id, el) in enumerate(opt.compliance.base.structure.elements)
+    for (el_id, el) in enumerate(elements)
         el.id = el_id
         for node in el.nodes
             if node ∉ new_nodes
@@ -248,7 +240,7 @@ function remove_thin_bars(opt::Optimizer)
     @info "Elements removed: $(length(removed_els))"
     @info "Nodes removed: $(length(opt.compliance.base.structure.nodes) - length(new_nodes))"
 
-    opt.compliance.base.structure = Structure(new_nodes, opt.compliance.base.structure.elements)
+    opt.compliance.base.structure = Structure(new_nodes, elements)
     set_areas(opt)
 end
 
@@ -296,7 +288,7 @@ function filter!(opt::Optimizer; ρ::Float64=1e-4)
         end
 
 
-        @info "i: $i \tα: $α \tc: $c \tr: $r \tΔc: $Δc \tΔα: $Δα \tc_old: $c_old"
+        @info "i: $i \tα: $α \tc: $c \tr: $r \tΔc: $Δc \tΔα: $Δα"
 
         i += 1
     end

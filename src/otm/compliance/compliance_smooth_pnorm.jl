@@ -5,7 +5,7 @@ mutable struct ComplianceSmoothPNorm <: ComplianceSmooth
     base::BaseCompliance
     p::Float64
 
-    function ComplianceSmoothPNorm(structure::Structure; p::Float64=30.0)
+    function ComplianceSmoothPNorm(structure::Structure; p::Float64=20.0)
         new(BaseCompliance(structure), p)
     end
 end

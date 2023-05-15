@@ -76,12 +76,11 @@ end
 Matrix that maps the complete forces vector to the loaded forces vector.
 """
 function H(base::BaseCompliance)::Matrix{Float64}
-    s = base.structure
-    fl_dofs = free_loaded_dofs(s)
+    fl_dofs = free_loaded_dofs(base.structure)
 
-    f = forces(s; include_restricted=true)
+    f = forces(base.structure; include_restricted=true)
     
-    h = zeros(number_of_dofs(s), length(fl_dofs))
+    h = zeros(number_of_dofs(base.structure), length(fl_dofs))
     
     c::Int64 = 1
     for i in fl_dofs
@@ -89,7 +88,7 @@ function H(base::BaseCompliance)::Matrix{Float64}
         c += 1
     end
 
-    return h[dofs(structure),:]
+    return h[dofs(base.structure),:]
 end
 
 """
