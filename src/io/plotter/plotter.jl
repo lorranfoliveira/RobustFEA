@@ -4,9 +4,10 @@ using Plots
 
 struct Plotter
     data::JsonReader
+    filename::String
 
     function Plotter(filename::String)
-        new(JsonReader(filename))
+        new(JsonReader(filename), filename)
     end
 end
 
@@ -32,6 +33,7 @@ function plot_structure(plt::Plotter, key::String="output_structure", scale::Flo
         plot!(p, x, y, label="", color=:black, aspect_ratio = :equal, lw = scale*areas[i], ticks = false, showaxis = false)
     end
 
+    savefig(p, "$(replace(plt.filename, ".json" => "")).pdf")
     display(p)
     sleep(1e6)
 end

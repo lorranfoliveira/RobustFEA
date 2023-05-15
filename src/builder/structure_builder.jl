@@ -113,7 +113,7 @@ function build_elements!(builder::StructureBuilder)
                     end
                 end
             end
-            @info "Progress: $(round((n * (i - 1) + j) / (n^2) * 100, digits=3)) %"
+            @info "Generating elements: $(round((n * (i - 1) + j) / (n^2) * 100, digits=3)) %"
         end
     end
 

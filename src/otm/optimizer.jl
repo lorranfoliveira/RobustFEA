@@ -39,10 +39,10 @@ mutable struct Optimizer
 
     function Optimizer(compliance::T; volume_max::Float64=1.0, 
                                       adaptive_move::Bool=true, 
-                                      min_iters::Int64=5,
+                                      min_iters::Int64=10,
                                       max_iters::Int64=5000, 
                                       x_min::Float64=0.0, 
-                                      tol::Float64=1e-6,
+                                      tol::Float64=1e-8,
                                       filter_tol::Float64=1.0,
                                       optimize_after_filter::Bool=true,
                                       filename::String="output.json") where T<:Compliance
@@ -145,7 +145,7 @@ function update_x!(opt::Optimizer)
     l2 = 1.2 * maximum(bm)
     x_new = zeros(opt.n)
 
-    while l2 - l1 > 1e-10 * (l2 + 1)
+    while l2 - l1 > opt.tol * (l2 + 1)
         lm = (l1 + l2) / 2
         be = max.(0.0, bm / lm)
         xt = @. opt.x_min + (opt.x_k - opt.x_min) * be^η
@@ -158,8 +158,6 @@ function update_x!(opt::Optimizer)
     end
     
     opt.x_k = x_new[:]
-
-    # Set areas to the elements
     set_areas(opt)
 end
 
@@ -254,7 +252,7 @@ function remove_thin_bars(opt::Optimizer)
     set_areas(opt)
 end
 
-function filter!(opt::Optimizer; c_tol::Float64=0.01, ρ::Float64=1e-4)
+function filter!(opt::Optimizer; ρ::Float64=1e-4)
     @info "================== Applying filter =================="
     x_old = opt.x_k[:]
     c_old = opt.compliance.base.obj_k
@@ -264,15 +262,13 @@ function filter!(opt::Optimizer; c_tol::Float64=0.01, ρ::Float64=1e-4)
     α_old = 0.0
     Δα = 1.0
 
-    Δc = 2 * c_tol
+    Δc = Inf
 
     if typeof(opt.compliance) <: ComplianceSmooth
         f = H(compliance.base) * compliance.base.eig_vecs[:,end]
     else
         f = forces(opt.compliance.base.structure, include_restricted=true)
     end
-
-    disp = K(opt.compliance.base.structure) \ f
 
     i = 1
     while Δα > 1e-4
@@ -281,14 +277,14 @@ function filter!(opt::Optimizer; c_tol::Float64=0.01, ρ::Float64=1e-4)
         opt.x_k[[ind for ind=eachindex(norm_x) if norm_x[ind] <= α]] .= 0.0
         set_areas(opt)
 
-        r = norm(K(opt.compliance.base.structure)*disp - f) / norm(f)
+        disp = K(opt.compliance.base.structure, use_tikhonov=true) \ f
+        r = norm(K(opt.compliance.base.structure, use_tikhonov=false)*disp - f) / norm(f)
 
-        #c1 = opt.compliance.base.obj_k = obj(opt.compliance, recalculate_eigenvals=true)
-        c = f' * disp
+        c = opt.compliance.base.obj_k = obj(opt.compliance, recalculate_eigenvals=true)
 
-        Δc = (c - c_old) / c_old
+        Δc = abs(c - c_old) / c_old
 
-        if r ≤ ρ && Δc < c_tol
+        if r ≤ ρ && Δc < opt.filter_tol
             x_old = opt.x_k[:]
             Δα = abs(α_old - α)
             α_old = α
@@ -300,7 +296,7 @@ function filter!(opt::Optimizer; c_tol::Float64=0.01, ρ::Float64=1e-4)
         end
 
 
-        @info "i: $i \tα: $α \tc: $c \tr: $r \tΔc: $Δc"
+        @info "i: $i \tα: $α \tc: $c \tr: $r \tΔc: $Δc \tΔα: $Δα \tc_old: $c_old"
 
         i += 1
     end

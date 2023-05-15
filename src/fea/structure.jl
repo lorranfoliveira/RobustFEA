@@ -139,13 +139,17 @@ function forces(structure::Structure; include_restricted::Bool=false, exclude_ze
     return [force for node in structure.nodes for force in forces(node, include_restricted=include_restricted, exclude_zeros=exclude_zeros)]
 end
 
+function λ(k_structure::SparseMatrixCSC{Float64})::UniformScaling{Float64}
+    dg = nonzeros(diag(k_structure)) 
+    return structure.tikhonov * (sum(dg) / length(dg)) * I
+end
 
 """
 Returns the stiffness matrix for the given structure.
 
 TODO: This is a naive implementation. It should be improved.
 """
-function K(structure::Structure)::SparseMatrixCSC{Float64}
+function K(structure::Structure; use_tikhonov::Bool=true)::SparseMatrixCSC{Float64}
     n = length(structure.elements) * 4^2
     rows = ones(Int64, n)
     cols = ones(Int64, n)
@@ -172,9 +176,9 @@ function K(structure::Structure)::SparseMatrixCSC{Float64}
     k[cons, :] .= 0.0
     k[:, cons] .= 0.0
 
-    dg = nonzeros(diag(k)) 
-    λ = structure.tikhonov * (sum(dg) / length(dg))
-    k += λ * I
+    if use_tikhonov
+        k += λ(k)
+    end
 
     dropzeros!(k)
     
