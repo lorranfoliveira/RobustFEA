@@ -177,13 +177,14 @@ function optimize!(opt::Optimizer)
 
         update_x!(opt)
         opt.compliance.base.obj_k = obj(opt.compliance)
+        min_max_obj_values = min_max_obj(opt.compliance)
         
-        #if opt.output.output_iterations === nothing
-        #    opt.output.output_iterations = [OutputIteration(opt.iter, opt.x_k, opt.compliance.base.obj_k, opt.vol)]
-        #else
-        #    push!(opt.output.output_iterations, 
-        #    OutputIteration(opt.iter, opt.x_k, opt.compliance.base.obj_k, opt.vol))
-        #end
+        if opt.output.output_iterations === nothing
+            opt.output.output_iterations = [OutputIteration(opt.iter, opt.x_k, min_max_obj_values[1], min_max_obj_values[2], opt.compliance.base.obj_k, opt.vol)]
+        else
+            push!(opt.output.output_iterations, 
+            OutputIteration(opt.iter, opt.x_k, min_max_obj_values[1], min_max_obj_values[2], opt.compliance.base.obj_k, opt.vol))
+        end
 
         error = ifelse(opt.iter <= opt.min_iters, Inf, norm((opt.x_k - opt.x_km1) ./ (1 .+ opt.x_km1), Inf))
 

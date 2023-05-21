@@ -4,8 +4,8 @@ include("src/builder/builder.jl")
 include("src/otm/otm.jl")
 include("src/fea/fea.jl")
 
-nx = 5
-ny = 5
+nx = 7
+ny = 7
 lx = 8.0
 ly = 4.0
 filename = "beam.json"
@@ -22,7 +22,7 @@ load_nearest_node(structure, [lx/2, ly/2], [1.0, 1.0])
 compliance = ComplianceSmoothPNorm(structure, p=20.0)
 
 vol = 1.0
-optimizer = Optimizer(compliance, max_iters=20000, volume_max=vol, filter_tol=0.1, filename=filename)
+optimizer = Optimizer(compliance, max_iters=10000, volume_max=vol, filter_tol=0.1, filename=filename)
 
 optimize!(optimizer)
 
