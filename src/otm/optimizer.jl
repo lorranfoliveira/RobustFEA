@@ -187,7 +187,7 @@ function optimize!(opt::Optimizer)
 
         error = ifelse(opt.iter <= opt.min_iters, Inf, norm((opt.x_k - opt.x_km1) ./ (1 .+ opt.x_km1), Inf))
 
-        @info "Iteration: $(opt.iter)\t $(obj(opt.compliance))\t vol: $(opt.vol)\t error: $(ifelse(error == Inf, "-", error))"
+        @info "Iteration: $(opt.iter)\t obj: $(obj(opt.compliance))\t min_max_obj: $(min_max_obj(opt.compliance))\t vol: $(opt.vol)\t error: $(ifelse(error == Inf, "-", error))"
 
         opt.iter += 1
     end
