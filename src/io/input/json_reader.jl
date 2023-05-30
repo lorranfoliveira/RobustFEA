@@ -38,6 +38,14 @@ function its_vol(reader::JsonReader)::Vector{Float64}
     return [it["vol"] for it in iterations_data(reader)]
 end
 
+function its_min_obj(reader::JsonReader)::Vector{Float64}
+    return [it["min_obj"] for it in iterations_data(reader)]
+end
+
+function its_max_obj(reader::JsonReader)::Vector{Float64}
+    return [it["max_obj"] for it in iterations_data(reader)]
+end
+
 function its_obj(reader::JsonReader)::Vector{Float64}
     return [it["obj"] for it in iterations_data(reader)]
 end

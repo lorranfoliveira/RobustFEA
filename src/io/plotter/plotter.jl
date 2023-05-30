@@ -11,8 +11,17 @@ struct Plotter
     end
 end
 
-function plot_compliance(plt::Plotter)
+function plot_compliance(plt::Plotter; plot_min_compliance::Bool=true, plot_max_compliance::Bool=true)  
     p = plot(its_iter(plt.data), its_obj(plt.data), label="Compliance", xlabel="Iteration", ylabel="Compliance")
+
+    if plot_min_compliance
+        plot!(p, its_iter(plt.data), its_min_obj(plt.data), label="Min Compliance")
+    end
+
+    if plot_max_compliance
+        plot!(p, its_iter(plt.data), its_max_obj(plt.data), label="Max Compliance")
+    end
+    
     display(p)
     sleep(1e6)
 end

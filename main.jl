@@ -4,8 +4,8 @@ include("src/builder/builder.jl")
 include("src/otm/otm.jl")
 include("src/fea/fea.jl")
 
-nx = 7
-ny = 7
+nx = 5
+ny = 5
 lx = 8.0
 ly = 4.0
 filename = "beam.json"
@@ -14,7 +14,7 @@ builder = StructureBuilder(lx, ly, nx, ny, Material(1, 1.0))
 structure = build(builder)
 
 restrict_nearest_node(structure, [0.0, 0.0], [true, true])
-restrict_nearest_node(structure, [lx, 0.0], [true, true])
+restrict_nearest_node(structure, [0.0, ly], [true, true])
 
 load_nearest_node(structure, [lx/2, ly/2], [1.0, 1.0])
 
