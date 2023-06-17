@@ -12,6 +12,8 @@ mutable struct Optimizer
     max_iters::Int64
     x_min::Float64
     tol::Float64
+    γ::Float64
+    varying_γ::Bool
 
     # automatic
     x_max::Float64
@@ -40,9 +42,10 @@ mutable struct Optimizer
                                       adaptive_move::Bool=true, 
                                       min_iters::Int64=10,
                                       max_iters::Int64=5000, 
-                                      x_min::Float64=0.0, 
+                                      x_min::Float64=1e-12, 
                                       tol::Float64=1e-8,
-                                      filter_tol::Float64=1.0,
+                                      varying_γ::Bool=true,
+                                      filter_tol::Float64=0.0,
                                       filename::String="output.json") where T<:Compliance
 
         els_len = [len(el) for el in compliance.base.structure.elements]
@@ -64,6 +67,8 @@ mutable struct Optimizer
         df_vol_init = zeros(n)
 
         vol = 0.0
+        
+        γ = 0.0
 
         # Create output
         output = Output(filename)
@@ -76,6 +81,8 @@ mutable struct Optimizer
             max_iters, 
             x_min, 
             tol, 
+            γ,
+            varying_γ,
             x_max, 
             x_init, 
             move, 
@@ -105,27 +112,48 @@ end
 diff_vol(opt::Optimizer) = [len(el) for el in opt.compliance.base.structure.elements]
 
 function update_move!(opt::Optimizer)
-    move_tmp = opt.move[:]
+    if opt.iter ≤ 2
+        return
+    else
+        move_tmp = opt.move[:]
 
-    terms = (opt.x_k - opt.x_km1) .* (opt.x_km1 - opt.x_km2)
-    for i=eachindex(terms)
-        if terms[i] < 0
-            move_tmp[i] = 0.95 * opt.move[i]
-        elseif terms[i] > 0
-            move_tmp[i] = 1.05 * opt.move[i]
+        terms = (opt.x_k - opt.x_km1) .* (opt.x_km1 - opt.x_km2)
+        for i=eachindex(terms)
+            if terms[i] < 0
+                move_tmp[i] = 0.95 * opt.move[i]
+            elseif terms[i] > 0
+                move_tmp[i] = 1.05 * opt.move[i]
+            end
         end
+    
+        opt.move = max.(1e-4 * opt.x_init, min.(move_tmp, 10 * opt.x_init))
     end
+end
 
-    opt.move = max.(1e-4 * opt.x_init, min.(move_tmp, 10 * opt.x_init))
+function update_γ!(opt::Optimizer)
+    #if opt.iter ≤ 100
+    #    return
+    #else
+        #γ_aux = opt.γ
+    
+       # term = (opt.compliance.base.obj_k - opt.compliance.base.obj_km1) * (opt.compliance.base.obj_km1 - opt.compliance.base.obj_km2)
+       # if term < 0
+       #     γ_aux = 1.2 * opt.γ
+       # elseif term > 0
+       #     γ_aux = 0.9 * opt.γ
+      #  end
+    
+     #   opt.γ = max(1e-4, min(γ_aux, 0.5))
+    #end
+
+    opt.γ = 0.0
 end
 
 function update_x!(opt::Optimizer)
     opt.vol = volume(opt.compliance.base.structure)
     opt.df_obj_k = diff_obj(opt.compliance)
 
-    if opt.adaptive_move && opt.iter > 2
-        update_move!(opt)
-    end
+    update_move!(opt)
 
     if opt.iter ≤ 2
         η = 0.5
@@ -154,6 +182,8 @@ function update_x!(opt::Optimizer)
         end
     end
     
+    x_new = opt.γ * opt.x_k + (1 - opt.γ) * x_new
+
     opt.x_k = x_new[:]
     set_areas(opt)
 end
@@ -177,6 +207,8 @@ function optimize!(opt::Optimizer)
 
         update_x!(opt)
         opt.compliance.base.obj_k = obj(opt.compliance)
+        update_γ!(opt)
+
         min_max_obj_values = min_max_obj(opt.compliance)
         
         if opt.output.output_iterations === nothing
@@ -187,8 +219,10 @@ function optimize!(opt::Optimizer)
         end
 
         error = ifelse(opt.iter <= opt.min_iters, Inf, norm((opt.x_k - opt.x_km1) ./ (1 .+ opt.x_km1), Inf))
+        #error = ifelse(error === NaN, Inf, error)
 
-        @info "Iteration: $(opt.iter)\t obj: $(obj(opt.compliance))\t min_max_obj: $(min_max_obj(opt.compliance))\t vol: $(opt.vol)\t error: $(ifelse(error == Inf, "-", error))"
+        #@info "It: $(opt.iter)  obj: $(obj(opt.compliance))  γ:$(opt.γ)  θc: $(angle(opt))  vol: $(opt.vol)  error: $(ifelse(error == Inf, "-", error))"
+        @info "It: $(opt.iter)  obj: $(obj(opt.compliance))  γ:$(opt.γ)  vol: $(opt.vol)  error: $(ifelse(error == Inf, "-", error))"
 
         opt.iter += 1
     end
@@ -264,7 +298,7 @@ function filter!(opt::Optimizer; ρ::Float64=1e-4)
     end
 
     i = 1
-    while Δα > 1e-4
+    while Δα > 1e-4 && i < 100
         α = (α₀ + α₁) / 2
         norm_x = opt.x_k / maximum(opt.x_k)
         opt.x_k[[ind for ind=eachindex(norm_x) if norm_x[ind] <= α]] .= 0.0
@@ -297,4 +331,11 @@ function filter!(opt::Optimizer; ρ::Float64=1e-4)
     remove_thin_bars(opt)    
 
     @info "==============================================================="
+end
+
+function angle(opt::Optimizer)
+    forces = H(opt.compliance.base) * opt.compliance.base.eig_vecs[:,end]
+    fx, fy = [f for f in forces if abs(f) > 0.0][1:2]
+
+    return atand(fy, fx)
 end

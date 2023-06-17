@@ -39,3 +39,11 @@ function obj(compliance::ComplianceSmoothMu; recalculate_eigenvals::Bool=false)
 
     return (sqrt(mu^2 + (c[1] - c[2])^2) + c[1] + c[2])/2
 end
+
+function min_max_obj(compliance::ComplianceSmoothMu; recalculate_eigenvals::Bool=false)
+    if recalculate_eigenvals
+        calculate_C_eigenvals_and_eigenvecs(compliance.base)
+    end
+
+    return compliance.base.eig_vals[[1, end]]
+end
