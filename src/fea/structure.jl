@@ -189,4 +189,8 @@ end
 """
 Returns the displacements for the given structure.
 """
-u(structure::Structure) = K(structure) \ forces(structure, include_restricted=true)
+function u(structure::Structure)
+    ut = zeros(number_of_dofs(structure))
+    ut[dofs(structure)] = K(structure) \ forces(structure)
+    return ut
+end

@@ -13,7 +13,6 @@ mutable struct Optimizer
     x_min::Float64
     tol::Float64
     γ::Float64
-    varying_γ::Bool
 
     # automatic
     x_max::Float64
@@ -37,6 +36,7 @@ mutable struct Optimizer
     output::Output
 
     filter_tol::Float64
+    layout_constraint::Union{Matrix{Float64}, Nothing}
 
     function Optimizer(compliance::T; volume_max::Float64=1.0, 
                                       adaptive_move::Bool=true, 
@@ -44,9 +44,10 @@ mutable struct Optimizer
                                       max_iters::Int64=5000, 
                                       x_min::Float64=1e-12, 
                                       tol::Float64=1e-8,
-                                      varying_γ::Bool=true,
+                                      γ::Float64=0.0,
                                       filter_tol::Float64=0.0,
-                                      filename::String="output.json") where T<:Compliance
+                                      filename::String="output.json",
+                                      layout_constraint::Union{Matrix{Float64}, Nothing}=nothing) where T<:Compliance
 
         els_len = [len(el) for el in compliance.base.structure.elements]
         n = length(compliance.base.structure.elements)
@@ -68,8 +69,6 @@ mutable struct Optimizer
 
         vol = 0.0
         
-        γ = 0.0
-
         # Create output
         output = Output(filename)
         output.input_structure = OutputStructure(compliance.base.structure)
@@ -82,7 +81,6 @@ mutable struct Optimizer
             x_min, 
             tol, 
             γ,
-            varying_γ,
             x_max, 
             x_init, 
             move, 
@@ -97,7 +95,19 @@ mutable struct Optimizer
             df_vol_init,
             vol,
             output,
-            filter_tol)
+            filter_tol,
+            layout_constraint)
+    end
+end
+
+function consider_layout_constraint!(opt::Optimizer)
+    if opt.layout_constraint === nothing
+        return
+    else
+        for i=1:size(opt.layout_constraint, 1)
+            els = opt.layout_constraint[i, :]
+            opt.df_obj_k[els] = sum(opt.df_obj_k[els]) 
+        end
     end
 end
 
@@ -130,28 +140,12 @@ function update_move!(opt::Optimizer)
     end
 end
 
-function update_γ!(opt::Optimizer)
-    #if opt.iter ≤ 100
-    #    return
-    #else
-        #γ_aux = opt.γ
-    
-       # term = (opt.compliance.base.obj_k - opt.compliance.base.obj_km1) * (opt.compliance.base.obj_km1 - opt.compliance.base.obj_km2)
-       # if term < 0
-       #     γ_aux = 1.2 * opt.γ
-       # elseif term > 0
-       #     γ_aux = 0.9 * opt.γ
-      #  end
-    
-     #   opt.γ = max(1e-4, min(γ_aux, 0.5))
-    #end
-
-    opt.γ = 0.0
-end
 
 function update_x!(opt::Optimizer)
     opt.vol = volume(opt.compliance.base.structure)
     opt.df_obj_k = diff_obj(opt.compliance)
+
+    consider_layout_constraint!(opt)
 
     update_move!(opt)
 
@@ -207,7 +201,6 @@ function optimize!(opt::Optimizer)
 
         update_x!(opt)
         opt.compliance.base.obj_k = obj(opt.compliance)
-        update_γ!(opt)
 
         min_max_obj_values = min_max_obj(opt.compliance)
         
