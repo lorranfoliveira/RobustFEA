@@ -36,7 +36,7 @@ mutable struct Optimizer
     output::Output
 
     filter_tol::Float64
-    layout_constraint::Union{Matrix{Float64}, Nothing}
+    layout_constraint::Union{Matrix{Int64}, Nothing}
 
     function Optimizer(compliance::T; volume_max::Float64=1.0, 
                                       adaptive_move::Bool=true, 
@@ -47,7 +47,7 @@ mutable struct Optimizer
                                       γ::Float64=0.0,
                                       filter_tol::Float64=0.0,
                                       filename::String="output.json",
-                                      layout_constraint::Union{Matrix{Float64}, Nothing}=nothing) where T<:Compliance
+                                      layout_constraint::Union{Matrix{Int64}, Nothing}=nothing) where T<:Compliance
 
         els_len = [len(el) for el in compliance.base.structure.elements]
         n = length(compliance.base.structure.elements)
@@ -106,7 +106,7 @@ function consider_layout_constraint!(opt::Optimizer)
     else
         for i=1:size(opt.layout_constraint, 1)
             els = opt.layout_constraint[i, :]
-            opt.df_obj_k[els] = sum(opt.df_obj_k[els]) 
+            opt.df_obj_k[els] .= sum(opt.df_obj_k[els]) 
         end
     end
 end

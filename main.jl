@@ -6,7 +6,7 @@ include("src/fea/fea.jl")
 
 using NPZ
 
-filename = "hook_3.json"
+filename = "quad.json"
 
 
 # Create structure
@@ -41,12 +41,14 @@ for i=1:size(loaded_nodes, 1)
     load_nearest_node(structure, loaded_nodes[i, :], [1.0, 1.0] / sz)
 end
 
+
 #compliance = ComplianceNominal(structure)
-#compliance = ComplianceSmoothPNorm(structure, p=17.0)
-compliance = ComplianceSmoothMu(structure, β=0.2)
+compliance = ComplianceSmoothPNorm(structure, p=30.0)
+#compliance = ComplianceSmoothMu(structure, β=0.2)
 
 vol = 1.0
 optimizer = Optimizer(compliance, max_iters=10000, volume_max=vol, filter_tol=0.0, filename=filename)
+optimizer.layout_constraint = reshape(npz_data["arr_4"] .+ 1, 1, length(npz_data["arr_4"]))
 
 optimize!(optimizer)
 
