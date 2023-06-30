@@ -39,6 +39,7 @@ mutable struct Optimizer
     layout_constraint::Union{Matrix{Int64}, Nothing}
 
     function Optimizer(compliance::T; volume_max::Float64=1.0, 
+                                      initial_move_parameter::Float64=1.0,
                                       adaptive_move::Bool=true, 
                                       min_iters::Int64=10,
                                       max_iters::Int64=5000, 
@@ -54,7 +55,7 @@ mutable struct Optimizer
 
         x_max =  volume_max / minimum(els_len)
         x_init = volume_max / sum(els_len)
-        move = fill(x_init, n)
+        move = initial_move_parameter * fill(x_init, n)
         iter = 1
 
         x_k = fill(x_init, n)
@@ -107,6 +108,8 @@ function consider_layout_constraint!(opt::Optimizer)
         for i=1:size(opt.layout_constraint, 1)
             els = opt.layout_constraint[i, :]
             opt.df_obj_k[els] .= sum(opt.df_obj_k[els]) 
+            opt.df_vol = diff_vol(opt)
+            opt.df_vol[els] .= sum(opt.df_vol[els]) 
         end
     end
 end
@@ -147,7 +150,9 @@ function update_x!(opt::Optimizer)
 
     consider_layout_constraint!(opt)
 
-    update_move!(opt)
+    if opt.adaptive_move
+        update_move!(opt)
+    end
 
     if opt.iter ≤ 2
         η = 0.5
