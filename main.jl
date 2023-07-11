@@ -6,7 +6,7 @@ include("src/fea/fea.jl")
 
 using NPZ
 
-filename = "hook_ref.json"
+filename = "hook_1_case_6.json"
 
 
 # Create structure
@@ -43,25 +43,25 @@ end
 
 
 #compliance = ComplianceNominal(structure)
-compliance = ComplianceSmoothPNorm(structure, p=20.0)
-#compliance = ComplianceSmoothMu(structure, β=0.2)
+#compliance = ComplianceSmoothPNorm(structure, p=15.0, true)
+compliance = ComplianceSmoothMu(structure, β=0.5e-1)
 
 vol = 1.0
 optimizer = Optimizer(compliance, 
-                      max_iters=10000,
+                      max_iters=15000,
                       volume_max=vol, 
                       adaptive_move=true, 
                       initial_move_parameter=1.0, 
-                      γ=0.5, 
+                      γ=0.0, 
                       filter_tol=0.0, 
                       filename=filename)
 
-#optimizer.layout_constraint = reshape(npz_data["arr_4"] .+ 1, 1, length(npz_data["arr_4"]))
+optimizer.layout_constraint = npz_data["arr_4"] .+ 1
 
 optimize!(optimizer)
 
 #@info "Areas: $([e.area for e in structure.elements])"
 
 r = Plotter(filename)
-plot_structure(r, "output_structure", 20.0)
+plot_structure(r, "output_structure", 5.0)
 #plot_compliance(r)

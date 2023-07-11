@@ -33,10 +33,10 @@ mutable struct BaseCompliance <: Compliance
     obj_k::Float64
     obj_km1::Float64
     obj_km2::Float64
+    unique_loads_angle::Bool
 
-
-    function BaseCompliance(structure::Structure)
-        new(structure, [], [], 0.0, 0.0, 0.0)
+    function BaseCompliance(structure::Structure; unique_loads_angle::Bool=false)
+        new(structure, [], [], 0.0, 0.0, 0.0, unique_loads_angle)
     end
 end
 
@@ -76,18 +76,16 @@ end
 Matrix that maps the complete forces vector to the loaded forces vector.
 """
 function H(base::BaseCompliance)::Matrix{Float64}
-    param_test = true
-
     fl_dofs = free_loaded_dofs(base.structure)
 
     f = forces(base.structure; include_restricted=true)
     
-    h = zeros(number_of_dofs(base.structure), ifelse(param_test, 2, length(fl_dofs)))
+    h = zeros(number_of_dofs(base.structure), ifelse(base.unique_loads_angle, 2, length(fl_dofs)))
     
     c::Int64 = 1
     for i in fl_dofs
         cm = c
-        if param_test
+        if base.unique_loads_angle
             if isodd(cm)
                 cm = 1
             else

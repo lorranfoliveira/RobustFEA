@@ -106,9 +106,8 @@ function consider_layout_constraint!(opt::Optimizer)
         return
     else
         for i=1:size(opt.layout_constraint, 1)
-            els = opt.layout_constraint[i, :]
+            els = [el for el in opt.layout_constraint[i, :] if el != 0]
             opt.df_obj_k[els] .= sum(opt.df_obj_k[els]) 
-            opt.df_vol = diff_vol(opt)
             opt.df_vol[els] .= sum(opt.df_vol[els]) 
         end
     end
@@ -147,6 +146,7 @@ end
 function update_x!(opt::Optimizer)
     opt.vol = volume(opt.compliance.base.structure)
     opt.df_obj_k = diff_obj(opt.compliance)
+    opt.df_vol = diff_vol(opt)
 
     consider_layout_constraint!(opt)
 
@@ -192,7 +192,6 @@ function optimize!(opt::Optimizer)
     error = Inf
     opt.iter = 0
     set_areas(opt)
-    opt.df_vol = diff_vol(opt)
 
     while error > opt.tol && opt.iter < opt.max_iters
         opt.compliance.base.obj_km2 = opt.compliance.base.obj_km1
@@ -226,6 +225,7 @@ function optimize!(opt::Optimizer)
     end
 
     @info "================== Optimization finished =================="
+    @info "File name: $(opt.output.filename)"
     @info "Final compliance: $(obj(opt.compliance))"
     @info "Final volume: $(opt.vol)"
     @info "Final error: $(error)"

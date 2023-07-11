@@ -6,7 +6,7 @@ struct ComplianceSmoothMu <: ComplianceSmooth
     β::Float64
 
     function ComplianceSmoothMu(structure::Structure; β::Float64=0.1)
-        new(BaseCompliance(structure), β)
+        new(BaseCompliance(structure, unique_loads_angle=true), β)
     end
 end
 
