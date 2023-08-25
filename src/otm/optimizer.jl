@@ -1,7 +1,7 @@
 include("compliance/compliance.jl")
 include("../io/output/output.jl")
 
-using JSON
+using JSON, Statistics
 
 mutable struct Optimizer
     # manual
@@ -37,18 +37,20 @@ mutable struct Optimizer
 
     filter_tol::Float64
     layout_constraint::Union{Matrix{Int64}, Nothing}
+    layout_constraint_divisions::Union{Int}
 
     function Optimizer(compliance::T; volume_max::Float64=1.0, 
                                       initial_move_parameter::Float64=1.0,
                                       adaptive_move::Bool=true, 
-                                      min_iters::Int64=10,
+                                      min_iters::Int64=20,
                                       max_iters::Int64=5000, 
                                       x_min::Float64=1e-12, 
                                       tol::Float64=1e-8,
                                       γ::Float64=0.0,
                                       filter_tol::Float64=0.0,
                                       filename::String="output.json",
-                                      layout_constraint::Union{Matrix{Int64}, Nothing}=nothing) where T<:Compliance
+                                      layout_constraint::Union{Matrix{Int64}, Nothing}=nothing,
+                                      layout_constraint_divisions::Union{Int}=0) where T<:Compliance
 
         els_len = [len(el) for el in compliance.base.structure.elements]
         n = length(compliance.base.structure.elements)
@@ -97,7 +99,8 @@ mutable struct Optimizer
             vol,
             output,
             filter_tol,
-            layout_constraint)
+            layout_constraint,
+            layout_constraint_divisions)
     end
 end
 
@@ -110,6 +113,21 @@ function consider_layout_constraint!(opt::Optimizer)
             opt.df_obj_k[els] .= sum(opt.df_obj_k[els]) 
             opt.df_vol[els] .= sum(opt.df_vol[els]) 
         end
+    end
+end
+
+function automatic_layout_constraint!(opt::Optimizer)
+    if opt.layout_constraint_divisions > 0
+        n = length(opt.x_k) / opt.layout_constraint_divisions
+        n = Int64(ceil(ifelse(ceil(n) <= n, n, ceil(n))))
+
+        sort_x_index = zeros(n * opt.layout_constraint_divisions)
+        sort_x_index[1:length(opt.x_k)] = sortperm(opt.x_k)
+        sort_x_index = reshape(sort_x_index, n, opt.layout_constraint_divisions)'
+        
+        opt.layout_constraint = sort_x_index
+
+        opt.x_k .= opt.x_init
     end
 end
 
@@ -132,13 +150,13 @@ function update_move!(opt::Optimizer)
         terms = (opt.x_k - opt.x_km1) .* (opt.x_km1 - opt.x_km2)
         for i=eachindex(terms)
             if terms[i] < 0
-                move_tmp[i] = 0.95 * opt.move[i]
+                move_tmp[i] = 0.7 * opt.move[i]
             elseif terms[i] > 0
-                move_tmp[i] = 1.05 * opt.move[i]
+                move_tmp[i] = 1.2 * opt.move[i]
             end
         end
     
-        opt.move = max.(1e-4 * opt.x_init, min.(move_tmp, 10 * opt.x_init))
+        opt.move = max.(1e-4 * opt.x_init, min.(move_tmp, 1000 * opt.x_init))
     end
 end
 
@@ -154,13 +172,15 @@ function update_x!(opt::Optimizer)
         update_move!(opt)
     end
 
-    if opt.iter ≤ 2
+    η = 0.5
+
+    if opt.iter <= Inf
         η = 0.5
     else
         ratio_diff = abs.(opt.df_obj_km1 ./ opt.df_obj_k)
         ratio_x = @. (opt.x_km2 + opt.tol) / (opt.x_km1 + opt.tol)
         a = @. 1 + log(ratio_diff) / log(ratio_x)
-        a = max.(min.(map(v -> ifelse(v === NaN, 0, v), a), -0.1), -15)
+        a = max.(min.(map(v -> ifelse(v === NaN, 0, v), a), -2.0), -15)
         η = @. 1 / (1 - a)
     end
 
@@ -194,32 +214,68 @@ function optimize!(opt::Optimizer)
     set_areas(opt)
 
     while error > opt.tol && opt.iter < opt.max_iters
+        if opt.layout_constraint_divisions ≥ 1 #&& opt.iter % 500 == 0 && opt.iter > 0
+            @warn "Applying automatic layout constraint"
+            automatic_layout_constraint!(opt)
+        end
+
         opt.compliance.base.obj_km2 = opt.compliance.base.obj_km1
         opt.compliance.base.obj_km1 = opt.compliance.base.obj_k
 
-        opt.df_obj_km2 = opt.df_obj_km1[:]
-        opt.df_obj_km1 = opt.df_obj_k[:]
 
-        opt.x_km2 = opt.x_km1[:]
-        opt.x_km1 = opt.x_k[:]
 
+
+
+        #opt.df_obj_km2 = copy(opt.df_obj_km1)
+        #opt.df_obj_km1 = copy(opt.df_obj_k)
+
+        #opt.x_km2 = copy(opt.x_km1)
+        #opt.x_km1 = copy(opt.x_k)
+
+        #update_x!(opt)
+
+
+
+
+
+
+
+
+
+        x_k_tmp = copy(opt.x_k)
+        
         update_x!(opt)
+
+        opt.df_obj_km2 = copy(opt.df_obj_km1)
+        opt.df_obj_km1 = copy(opt.df_obj_k)
+        opt.x_km2 = copy(opt.x_km1)
+        opt.x_km1 = copy(x_k_tmp)
+
+
+
+
+
+
+
+
         opt.compliance.base.obj_k = obj(opt.compliance)
 
-        min_max_obj_values = min_max_obj(opt.compliance)
+        #min_max_obj_values = min_max_obj(opt.compliance)
         
-        if opt.output.output_iterations === nothing
-            opt.output.output_iterations = [OutputIteration(opt.iter, opt.x_k, min_max_obj_values[1], min_max_obj_values[2], opt.compliance.base.obj_k, opt.vol)]
-        else
-            push!(opt.output.output_iterations, 
-            OutputIteration(opt.iter, opt.x_k, min_max_obj_values[1], min_max_obj_values[2], opt.compliance.base.obj_k, opt.vol))
-        end
+        #if opt.output.output_iterations === nothing
+        #    opt.output.output_iterations = [OutputIteration(opt.iter, opt.x_k, min_max_obj_values[1], min_max_obj_values[2], opt.compliance.base.obj_k, opt.vol)]
+        #else
+        #    push!(opt.output.output_iterations, 
+        #    OutputIteration(opt.iter, opt.x_k, min_max_obj_values[1], min_max_obj_values[2], opt.compliance.base.obj_k, opt.vol))
+        #end
 
         error = ifelse(opt.iter <= opt.min_iters, Inf, norm((opt.x_k - opt.x_km1) ./ (1 .+ opt.x_km1), Inf))
         #error = ifelse(error === NaN, Inf, error)
 
-        #@info "It: $(opt.iter)  obj: $(obj(opt.compliance))  γ:$(opt.γ)  θc: $(angle(opt))  vol: $(opt.vol)  error: $(ifelse(error == Inf, "-", error))"
-        @info "It: $(opt.iter)  obj: $(obj(opt.compliance))  γ:$(opt.γ)  vol: $(opt.vol)  error: $(ifelse(error == Inf, "-", error))"
+        #log_txt = "It: $(opt.iter)  obj: $(obj(opt.compliance))  γ:$(opt.γ)  θc: $(angle(opt))  vol: $(opt.vol)  error: $(ifelse(error == Inf, "-", error))"
+        log_txt = "It: $(opt.iter)  obj: $(obj(opt.compliance)) mean_move: $(mean(opt.move)) γ:$(opt.γ)  vol: $(opt.vol)  error: $(ifelse(error == Inf, "-", error))"
+        println(log_txt)
+        #@info log_txt
 
         opt.iter += 1
     end
@@ -232,6 +288,7 @@ function optimize!(opt::Optimizer)
     @info "Number of iterations: $(opt.iter)"
     @info "Number of elements: $(length(opt.x_k))"
     @info "Number of nodes: $(length(opt.compliance.base.structure.nodes))"
+    @info "Mean move: $(length(mean(opt.move)))"
 
     if opt.filter_tol > 0.0
         filter!(opt)

@@ -30,6 +30,7 @@ function plot_structure(plt::Plotter, key::String="output_structure", scale::Flo
     els = elements_data(plt.data, key)
     nodes = nodes_data(plt.data, key)
     areas = sqrt.(areas_data(plt.data, key))
+    #areas = areas_data(plt.data, key)
     areas_norm = areas / maximum(areas)
 
     areas_norm[[ind for ind=eachindex(areas_norm) if areas_norm[ind] <= α]] .= 0.0
@@ -44,11 +45,12 @@ function plot_structure(plt::Plotter, key::String="output_structure", scale::Flo
         
         a = areas_norm[i]
         if a > 0.0
-            plot!(p, x, y, label="", color=:black, aspect_ratio = :equal, lw = scale*a, ticks = false, showaxis = false)
+            plot!(p, x, y, label="", color=cgrad(:jet, [0.00, 1.0])[a], aspect_ratio = :equal, lw = scale*a, ticks = false, showaxis = false)
         end
     end
 
     savefig(p, "$(replace(plt.filename, ".json" => "")).pdf")
+    savefig(p, "$(replace(plt.filename, ".json" => "")).svg")
     display(p)
     sleep(1e6)
 end

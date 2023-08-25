@@ -6,7 +6,7 @@ mutable struct ComplianceSmoothPNorm <: ComplianceSmooth
     p::Float64
 
     function ComplianceSmoothPNorm(structure::Structure; p::Float64=20.0, unique_loads_angle::Bool=true)
-        new(BaseCompliance(structure, unique_loads_angle), p)
+        new(BaseCompliance(structure, unique_loads_angle=unique_loads_angle), p)
     end
 end
 
