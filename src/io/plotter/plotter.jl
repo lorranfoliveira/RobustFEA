@@ -45,7 +45,7 @@ function plot_structure(plt::Plotter, key::String="output_structure", scale::Flo
         
         a = areas_norm[i]
         if a > 0.0
-            plot!(p, x, y, label="", color=cgrad(:jet, [0.00, 1.0])[a], aspect_ratio = :equal, lw = scale*a, ticks = false, showaxis = false)
+            plot!(p, x, y, label="", color=cgrad(:jet, 10, categorical=true)[a], aspect_ratio = :equal, lw = scale*a, ticks = false, showaxis = false)
         end
     end
 

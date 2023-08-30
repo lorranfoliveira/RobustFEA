@@ -5,9 +5,9 @@ using JSON, Statistics
 
 mutable struct Optimizer
     # manual
-    compliance::T where T<:Compliance
+    compliance::T where {T<:Compliance}
     volume_max::Float64
-    adaptive_move::Bool
+    adaptive_γ::Bool
     min_iters::Int64
     max_iters::Int64
     x_min::Float64
@@ -36,26 +36,26 @@ mutable struct Optimizer
     output::Output
 
     filter_tol::Float64
-    layout_constraint::Union{Matrix{Int64}, Nothing}
+    layout_constraint::Union{Matrix{Int64},Nothing}
     layout_constraint_divisions::Union{Int}
 
-    function Optimizer(compliance::T; volume_max::Float64=1.0, 
-                                      initial_move_parameter::Float64=1.0,
-                                      adaptive_move::Bool=true, 
-                                      min_iters::Int64=20,
-                                      max_iters::Int64=5000, 
-                                      x_min::Float64=1e-12, 
-                                      tol::Float64=1e-8,
-                                      γ::Float64=0.0,
-                                      filter_tol::Float64=0.0,
-                                      filename::String="output.json",
-                                      layout_constraint::Union{Matrix{Int64}, Nothing}=nothing,
-                                      layout_constraint_divisions::Union{Int}=0) where T<:Compliance
+    function Optimizer(compliance::T; volume_max::Float64=1.0,
+        initial_move_parameter::Float64=1.0,
+        adaptive_move::Bool=true,
+        min_iters::Int64=20,
+        max_iters::Int64=5000,
+        x_min::Float64=1e-12,
+        tol::Float64=1e-8,
+        γ::Float64=0.0,
+        filter_tol::Float64=0.0,
+        filename::String="output.json",
+        layout_constraint::Union{Matrix{Int64},Nothing}=nothing,
+        layout_constraint_divisions::Union{Int}=0) where {T<:Compliance}
 
         els_len = [len(el) for el in compliance.base.structure.elements]
         n = length(compliance.base.structure.elements)
 
-        x_max =  volume_max / minimum(els_len)
+        x_max = volume_max / minimum(els_len)
         x_init = volume_max / sum(els_len)
         move = initial_move_parameter * fill(x_init, n)
         iter = 1
@@ -71,27 +71,27 @@ mutable struct Optimizer
         df_vol_init = zeros(n)
 
         vol = 0.0
-        
+
         # Create output
         output = Output(filename)
         output.input_structure = OutputStructure(compliance.base.structure)
 
-        new(compliance, 
+        new(compliance,
             volume_max,
-            adaptive_move, 
+            adaptive_move,
             min_iters,
-            max_iters, 
-            x_min, 
-            tol, 
+            max_iters,
+            x_min,
+            tol,
             γ,
-            x_max, 
-            x_init, 
-            move, 
-            iter, 
-            n, 
-            x_k, 
-            x_km1, 
-            x_km2, 
+            x_max,
+            x_init,
+            move,
+            iter,
+            n,
+            x_k,
+            x_km1,
+            x_km2,
             df_obj_k,
             df_obj_km1,
             df_obj_km2,
@@ -108,10 +108,10 @@ function consider_layout_constraint!(opt::Optimizer)
     if opt.layout_constraint === nothing
         return
     else
-        for i=1:size(opt.layout_constraint, 1)
+        for i = 1:size(opt.layout_constraint, 1)
             els = [el for el in opt.layout_constraint[i, :] if el != 0]
-            opt.df_obj_k[els] .= sum(opt.df_obj_k[els]) 
-            opt.df_vol[els] .= sum(opt.df_vol[els]) 
+            opt.df_obj_k[els] .= sum(opt.df_obj_k[els])
+            opt.df_vol[els] .= sum(opt.df_vol[els])
         end
     end
 end
@@ -124,7 +124,7 @@ function automatic_layout_constraint!(opt::Optimizer)
         sort_x_index = zeros(n * opt.layout_constraint_divisions)
         sort_x_index[1:length(opt.x_k)] = sortperm(opt.x_k)
         sort_x_index = reshape(sort_x_index, n, opt.layout_constraint_divisions)'
-        
+
         opt.layout_constraint = sort_x_index
 
         opt.x_k .= opt.x_init
@@ -134,7 +134,7 @@ end
 get_areas(opt::Optimizer)::Vector{Float64} = [el.area for el in opt.compliance.base.structure.elements]
 
 function set_areas(opt::Optimizer)
-    for i=eachindex(opt.compliance.base.structure.elements)
+    for i = eachindex(opt.compliance.base.structure.elements)
         opt.compliance.base.structure.elements[i].area = opt.x_k[i]
     end
 end
@@ -148,15 +148,33 @@ function update_move!(opt::Optimizer)
         move_tmp = opt.move[:]
 
         terms = (opt.x_k - opt.x_km1) .* (opt.x_km1 - opt.x_km2)
-        for i=eachindex(terms)
+        for i = eachindex(terms)
             if terms[i] < 0
                 move_tmp[i] = 0.7 * opt.move[i]
             elseif terms[i] > 0
                 move_tmp[i] = 1.2 * opt.move[i]
             end
         end
-    
-        opt.move = max.(1e-4 * opt.x_init, min.(move_tmp, 1000 * opt.x_init))
+
+        opt.move = max.(1e-2 * opt.x_init, min.(move_tmp, 1000 * opt.x_init))
+    end
+end
+
+function update_γ!(opt::Optimizer)
+    if opt.iter % 50 == 0
+        obj_k = opt.compliance.base.obj_k
+        obj_km1 = opt.compliance.base.obj_km1
+        obj_km2 = opt.compliance.base.obj_km2
+        p = (obj_k - obj_km1) * (obj_km1 - obj_km2)
+        for i = eachindex(p)
+            if p < 0
+                opt.γ = opt.γ + 0.025
+            elseif p[i] > 0
+                opt.γ = opt.γ - 0.025
+            end
+        end
+
+        opt.γ = max(0.0, min(opt.γ, 0.98))
     end
 end
 
@@ -168,13 +186,15 @@ function update_x!(opt::Optimizer)
 
     consider_layout_constraint!(opt)
 
-    if opt.adaptive_move
-        update_move!(opt)
+    if opt.adaptive_γ
+        #update_move!(opt)
+        update_γ!(opt)
     end
+
 
     η = 0.5
 
-    if opt.iter <= Inf
+    if opt.iter <= 2
         η = 0.5
     else
         ratio_diff = abs.(opt.df_obj_km1 ./ opt.df_obj_k)
@@ -200,7 +220,7 @@ function update_x!(opt::Optimizer)
             l2 = lm
         end
     end
-    
+
     x_new = opt.γ * opt.x_k + (1 - opt.γ) * x_new
 
     opt.x_k = x_new[:]
@@ -219,49 +239,22 @@ function optimize!(opt::Optimizer)
             automatic_layout_constraint!(opt)
         end
 
+        x_k_tmp = copy(opt.x_k)
+
+        update_x!(opt)
+
         opt.compliance.base.obj_km2 = opt.compliance.base.obj_km1
         opt.compliance.base.obj_km1 = opt.compliance.base.obj_k
 
-
-
-
-
-        #opt.df_obj_km2 = copy(opt.df_obj_km1)
-        #opt.df_obj_km1 = copy(opt.df_obj_k)
-
-        #opt.x_km2 = copy(opt.x_km1)
-        #opt.x_km1 = copy(opt.x_k)
-
-        #update_x!(opt)
-
-
-
-
-
-
-
-
-
-        x_k_tmp = copy(opt.x_k)
-        
-        update_x!(opt)
+        opt.compliance.base.obj_k = obj(opt.compliance)
 
         opt.df_obj_km2 = copy(opt.df_obj_km1)
         opt.df_obj_km1 = copy(opt.df_obj_k)
         opt.x_km2 = copy(opt.x_km1)
         opt.x_km1 = copy(x_k_tmp)
 
-
-
-
-
-
-
-
-        opt.compliance.base.obj_k = obj(opt.compliance)
-
         #min_max_obj_values = min_max_obj(opt.compliance)
-        
+
         #if opt.output.output_iterations === nothing
         #    opt.output.output_iterations = [OutputIteration(opt.iter, opt.x_k, min_max_obj_values[1], min_max_obj_values[2], opt.compliance.base.obj_k, opt.vol)]
         #else
@@ -302,7 +295,7 @@ end
 function remove_thin_bars(opt::Optimizer)
     @info "================== Removing thin elements =================="
 
-    removed_els = [i for i=eachindex(opt.x_k) if opt.x_k[i] ≈ 0.0]
+    removed_els = [i for i = eachindex(opt.x_k) if opt.x_k[i] ≈ 0.0]
     elements = copy(opt.compliance.base.structure.elements)
 
     deleteat!(elements, removed_els)
@@ -320,7 +313,7 @@ function remove_thin_bars(opt::Optimizer)
         el.id = el_id
         for node in el.nodes
             if node ∉ new_nodes
-                node.id = nd_id 
+                node.id = nd_id
                 nd_id += 1
                 push!(new_nodes, node)
             end
@@ -347,7 +340,7 @@ function filter!(opt::Optimizer; ρ::Float64=1e-4)
     Δc = Inf
 
     if typeof(opt.compliance) <: ComplianceSmooth
-        f = H(compliance.base) * compliance.base.eig_vecs[:,end]
+        f = H(compliance.base) * compliance.base.eig_vecs[:, end]
     else
         f = forces(opt.compliance.base.structure, include_restricted=true)
     end
@@ -356,11 +349,11 @@ function filter!(opt::Optimizer; ρ::Float64=1e-4)
     while Δα > 1e-4 && i < 100
         α = (α₀ + α₁) / 2
         norm_x = opt.x_k / maximum(opt.x_k)
-        opt.x_k[[ind for ind=eachindex(norm_x) if norm_x[ind] <= α]] .= 0.0
+        opt.x_k[[ind for ind = eachindex(norm_x) if norm_x[ind] <= α]] .= 0.0
         set_areas(opt)
 
         disp = K(opt.compliance.base.structure, use_tikhonov=true) \ f
-        r = norm(K(opt.compliance.base.structure, use_tikhonov=false)*disp - f) / norm(f)
+        r = norm(K(opt.compliance.base.structure, use_tikhonov=false) * disp - f) / norm(f)
 
         c = opt.compliance.base.obj_k = obj(opt.compliance, recalculate_eigenvals=true)
 
@@ -383,13 +376,13 @@ function filter!(opt::Optimizer; ρ::Float64=1e-4)
         i += 1
     end
 
-    remove_thin_bars(opt)    
+    remove_thin_bars(opt)
 
     @info "==============================================================="
 end
 
 function angle(opt::Optimizer)
-    forces = H(opt.compliance.base) * opt.compliance.base.eig_vecs[:,end]
+    forces = H(opt.compliance.base) * opt.compliance.base.eig_vecs[:, end]
     fx, fy = [f for f in forces if abs(f) > 0.0][1:2]
 
     return atand(fy, fx)
