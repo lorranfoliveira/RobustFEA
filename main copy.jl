@@ -10,7 +10,7 @@ nodes = [
     Node(2, [0.0, 1.0]; constraint=[true, true]),
     Node(3, [1.0, 0.0]),
     Node(4, [1.0, 1.0]),
-    Node(5, [2.0, 0.0]),
+    Node(5, [2.0, 0.0]; force=[0.0, 0.0]),
     Node(6, [2.0, 1.0]; force=[1.0, 1.0])
 ]
 
@@ -40,12 +40,10 @@ end
 
 structure = Structure(nodes, elements)
 
-println("Displacements: $(u(structure))")
-
-comp = ComplianceNominal(structure)
+comp = ComplianceSmoothPNorm(structure, p=20.0, unique_loads_angle=false)
 
 otm = Optimizer(comp, 
-                max_iters=500,
+                max_iters=5000,
                 volume_max=1.0, 
                 adaptive_move=false, 
                 initial_move_parameter=0.1, 
