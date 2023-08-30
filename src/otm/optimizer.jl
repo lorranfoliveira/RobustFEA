@@ -34,7 +34,6 @@ mutable struct Optimizer
 
     vol::Float64
 
-    filter_tol::Float64
     layout_constraint::Union{Matrix{Int64},Nothing}
     layout_constraint_divisions::Union{Int}
 
@@ -46,7 +45,6 @@ mutable struct Optimizer
         x_min::Float64=1e-12,
         tol::Float64=1e-8,
         γ::Float64=0.0,
-        filter_tol::Float64=0.0,
         layout_constraint::Union{Matrix{Int64},Nothing}=nothing,
         layout_constraint_divisions::Union{Int}=0) where {T<:Compliance}
 
@@ -92,7 +90,6 @@ mutable struct Optimizer
             df_obj_km2,
             df_vol_init,
             vol,
-            filter_tol,
             layout_constraint,
             layout_constraint_divisions)
     end
@@ -306,22 +303,10 @@ function optimize!(opt::Optimizer)
         opt.x_km2 = copy(opt.x_km1)
         opt.x_km1 = copy(x_k_tmp)
 
-        #min_max_obj_values = min_max_obj(opt.compliance)
-
-        #if opt.output.output_iterations === nothing
-        #    opt.output.output_iterations = [OutputIteration(opt.iter, opt.x_k, min_max_obj_values[1], min_max_obj_values[2], opt.compliance.base.obj_k, opt.vol)]
-        #else
-        #    push!(opt.output.output_iterations, 
-        #    OutputIteration(opt.iter, opt.x_k, min_max_obj_values[1], min_max_obj_values[2], opt.compliance.base.obj_k, opt.vol))
-        #end
-
         error = ifelse(opt.iter <= opt.min_iters, Inf, norm((opt.x_k - opt.x_km1) ./ (1 .+ opt.x_km1), Inf))
-        #error = ifelse(error === NaN, Inf, error)
 
         #log_txt = "It: $(opt.iter)  obj: $(obj(opt.compliance))  γ:$(opt.γ)  θc: $(angle(opt))  vol: $(opt.vol)  error: $(ifelse(error == Inf, "-", error))"
-        log_txt = "It: $(opt.iter)  obj: $(obj(opt.compliance)) mean_move: $(mean(opt.move)) γ:$(opt.γ)  vol: $(opt.vol)  error: $(ifelse(error == Inf, "-", error))"
-        println(log_txt)
-        #@info log_txt
+        @info "It: $(opt.iter)  obj: $(obj(opt.compliance)) mean_move: $(mean(opt.move)) γ:$(opt.γ)  vol: $(opt.vol)  error: $(ifelse(error == Inf, "-", error))"
 
         opt.iter += 1
     end
@@ -370,60 +355,6 @@ function remove_thin_bars(opt::Optimizer)
 
     opt.compliance.base.structure = Structure(new_nodes, elements)
     set_areas(opt)
-end
-
-function filter!(opt::Optimizer; ρ::Float64=1e-4)
-    @info "================== Applying filter =================="
-    x_old = opt.x_k[:]
-    c_old = opt.compliance.base.obj_k
-
-    α₀ = 0.0
-    α₁ = 1.0
-    α_old = 0.0
-    Δα = 1.0
-
-    Δc = Inf
-
-    if typeof(opt.compliance) <: ComplianceSmooth
-        f = H(compliance.base) * compliance.base.eig_vecs[:, end]
-    else
-        f = forces(opt.compliance.base.structure, include_restricted=true)
-    end
-
-    i = 1
-    while Δα > 1e-4 && i < 100
-        α = (α₀ + α₁) / 2
-        norm_x = opt.x_k / maximum(opt.x_k)
-        opt.x_k[[ind for ind = eachindex(norm_x) if norm_x[ind] <= α]] .= 0.0
-        set_areas(opt)
-
-        disp = K(opt.compliance.base.structure, use_tikhonov=true) \ f
-        r = norm(K(opt.compliance.base.structure, use_tikhonov=false) * disp - f) / norm(f)
-
-        c = opt.compliance.base.obj_k = obj(opt.compliance, recalculate_eigenvals=true)
-
-        Δc = abs(c - c_old) / c_old
-
-        if r ≤ ρ && Δc < opt.filter_tol
-            x_old = opt.x_k[:]
-            Δα = abs(α_old - α)
-            α_old = α
-            α₀ = α
-            c_old = c
-        else
-            opt.x_k = x_old[:]
-            α₁ = α
-        end
-
-
-        @info "i: $i \tα: $α \tc: $c \tr: $r \tΔc: $Δc \tΔα: $Δα"
-
-        i += 1
-    end
-
-    remove_thin_bars(opt)
-
-    @info "==============================================================="
 end
 
 function angle(opt::Optimizer)
