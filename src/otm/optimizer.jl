@@ -6,6 +6,7 @@ using JSON, Statistics
 mutable struct Optimizer
     # manual
     compliance::T where {T<:Compliance}
+    filename::String
     volume_max::Float64
     adaptive_γ::Bool
     min_iters::Int64
@@ -33,13 +34,11 @@ mutable struct Optimizer
 
     vol::Float64
 
-    output::Output
-
     filter_tol::Float64
     layout_constraint::Union{Matrix{Int64},Nothing}
     layout_constraint_divisions::Union{Int}
 
-    function Optimizer(compliance::T; volume_max::Float64=1.0,
+    function Optimizer(compliance::T, filename::String; volume_max::Float64=1.0,
         initial_move_parameter::Float64=1.0,
         adaptive_move::Bool=true,
         min_iters::Int64=20,
@@ -48,7 +47,6 @@ mutable struct Optimizer
         tol::Float64=1e-8,
         γ::Float64=0.0,
         filter_tol::Float64=0.0,
-        filename::String="output.json",
         layout_constraint::Union{Matrix{Int64},Nothing}=nothing,
         layout_constraint_divisions::Union{Int}=0) where {T<:Compliance}
 
@@ -72,11 +70,8 @@ mutable struct Optimizer
 
         vol = 0.0
 
-        # Create output
-        output = Output(filename)
-        output.input_structure = OutputStructure(compliance.base.structure)
-
         new(compliance,
+            filename,
             volume_max,
             adaptive_move,
             min_iters,
@@ -97,7 +92,6 @@ mutable struct Optimizer
             df_obj_km2,
             df_vol_init,
             vol,
-            output,
             filter_tol,
             layout_constraint,
             layout_constraint_divisions)
@@ -274,7 +268,7 @@ function optimize!(opt::Optimizer)
     end
 
     @info "================== Optimization finished =================="
-    @info "File name: $(opt.output.filename)"
+    @info "File name: $(opt.filename)"
     @info "Final compliance: $(obj(opt.compliance))"
     @info "Final volume: $(opt.vol)"
     @info "Final error: $(error)"
@@ -282,14 +276,6 @@ function optimize!(opt::Optimizer)
     @info "Number of elements: $(length(opt.x_k))"
     @info "Number of nodes: $(length(opt.compliance.base.structure.nodes))"
     @info "Mean move: $(length(mean(opt.move)))"
-
-    if opt.filter_tol > 0.0
-        filter!(opt)
-    end
-
-    # Results to json
-    opt.output.output_structure = OutputStructure(opt.compliance.base.structure)
-    save_json(opt.output)
 end
 
 function remove_thin_bars(opt::Optimizer)

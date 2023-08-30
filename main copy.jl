@@ -54,6 +54,7 @@ function run(filename::String)
     end
 
     otm = Optimizer(comp, 
+                    filename,
                     volume_max=data["optimizer"]["volume_max"],
                     initial_move_parameter=data["optimizer"]["initial_move_multiplier"],
                     adaptive_move=data["optimizer"]["use_adaptive_move"],
@@ -61,8 +62,7 @@ function run(filename::String)
                     max_iters=data["optimizer"]["max_iterations"],
                     x_min=data["optimizer"]["x_min"],
                     tol=data["optimizer"]["tolerance"],
-                    γ=data["optimizer"]["initial_damping_parameter"],
-                    filename=filename)
+                    γ=data["optimizer"]["initial_damping_parameter"])
 
     @time optimize!(otm)
 end
