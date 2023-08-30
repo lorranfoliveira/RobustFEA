@@ -139,9 +139,9 @@ function forces(structure::Structure; include_restricted::Bool=false, exclude_ze
     return [force for node in structure.nodes for force in forces(node, include_restricted=include_restricted, exclude_zeros=exclude_zeros)]
 end
 
-function λ(k_structure::SparseMatrixCSC{Float64})::UniformScaling{Float64}
+function λ(k_structure::SparseMatrixCSC{Float64}, tikhonov::Float64)::UniformScaling{Float64}
     dg = nonzeros(diag(k_structure)) 
-    return structure.tikhonov * (sum(dg) / length(dg)) * I
+    return tikhonov * (sum(dg) / length(dg)) * I
 end
 
 """
@@ -177,7 +177,7 @@ function K(structure::Structure; use_tikhonov::Bool=true)::SparseMatrixCSC{Float
     k[:, cons] .= 0.0
 
     if use_tikhonov
-        k += λ(k)
+        k += λ(k, structure.tikhonov)
     end
 
     dropzeros!(k)
