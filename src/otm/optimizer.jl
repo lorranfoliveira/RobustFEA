@@ -35,7 +35,7 @@ mutable struct Optimizer
 
     vol::Float64
 
-    layout_constraint::Union{Matrix{Int64},Nothing}
+    layout_constraint::Union{Dict{Int64, Vector{Int64}},Nothing}
     layout_constraint_divisions::Union{Int}
 
     function Optimizer(compliance::T, filename::String; volume_max::Float64=1.0,
@@ -47,7 +47,7 @@ mutable struct Optimizer
         x_min::Float64=1e-12,
         tol::Float64=1e-8,
         damping::Float64=0.0,
-        layout_constraint::Union{Matrix{Int64},Nothing}=nothing,
+        layout_constraint::Union{Dict{Int64, Vector{Int64}},Nothing}=nothing,
         layout_constraint_divisions::Union{Int}=0) where {T<:Compliance}
 
         els_len = [len(el) for el in compliance.base.structure.elements]
@@ -121,13 +121,27 @@ function generate_optimizer(filename::String)::Optimizer
         push!(nodes, node)
     end
 
+    layout_constraints = Dict{Int64,Vector{Int64}}()
     for element_data in data["input_structure"]["elements"]
         id = element_data["id"]
         node1 = nodes[element_data["nodes"][1]]
         node2 = nodes[element_data["nodes"][2]]
         material = materials[element_data["material"]]
+
+        if element_data["layout_constraint"] > 0
+            try
+                push!(layout_constraints[element_data["layout_constraint"]], id)
+            catch
+                layout_constraints[element_data["layout_constraint"]] = [id]
+            end
+        end
+
         element = Element(id, [node1, node2], material, element_data["area"])
         push!(elements, element)
+    end
+
+    if isempty(layout_constraints)
+        layout_constraints = nothing
     end
 
     structure = Structure(nodes, elements)
@@ -163,17 +177,17 @@ function generate_optimizer(filename::String)::Optimizer
         max_iters=data["optimizer"]["max_iterations"],
         x_min=data["optimizer"]["x_min"],
         tol=data["optimizer"]["tolerance"],
-        damping=data["optimizer"]["initial_damping_parameter"])
+        damping=data["optimizer"]["initial_damping_parameter"],
+        layout_constraint=layout_constraints)
 end
 
 function consider_layout_constraint!(opt::Optimizer)
     if opt.layout_constraint === nothing
         return
     else
-        for i = 1:size(opt.layout_constraint, 1)
-            els = [el for el in opt.layout_constraint[i, :] if el != 0]
-            opt.df_obj_k[els] .= sum(opt.df_obj_k[els])
-            opt.df_vol[els] .= sum(opt.df_vol[els])
+        for lc in values(opt.layout_constraint)
+            opt.df_obj_k[lc] .= sum(opt.df_obj_k[lc])
+            opt.df_vol[lc] .= sum(opt.df_vol[lc])
         end
     end
 end
@@ -256,19 +270,7 @@ function update_x!(opt::Optimizer)
         update_move!(opt)
     end
 
-
     η = 0.5
-
-    #if opt.iter <= 2
-    #    η = 0.5
-    ##else
-    #    ratio_diff = abs.(opt.df_obj_km1 ./ opt.df_obj_k)
-    #    ratio_x = @. (opt.x_km2 + opt.tol) / (opt.x_km1 + opt.tol)
-    #    a = @. 1 + log(ratio_diff) / log(ratio_x)
-    #    a = max.(min.(map(v -> ifelse(v === NaN, 0, v), a), -2.0), -15)
-    #    η = @. 1 / (1 - a)
-    #end
-
     bm = -opt.df_obj_k ./ opt.df_vol
     l1 = 0.0
     l2 = 1.2 * maximum(bm)

@@ -12,7 +12,7 @@ adaptive_γ = false
 beta = 0.2e-1
 γ = 0.7
 move = 0.1
-filename = "hook_$id.json"#114924 with 0.1 #114891 with 100
+filename = "hook_4.json"#114924 with 0.1 #114891 with 100
 
 # Create a logger
 io = open(replace("$(filename)", ".json" => "_log.txt"), "w+")
