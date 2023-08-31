@@ -14,7 +14,7 @@ mutable struct Optimizer
     x_min::Float64
     tol::Float64
     damping::Float64
-    output::Dict{String, Any}
+    output::Dict{String,Any}
 
     # automatic
     x_max::Float64
@@ -80,7 +80,7 @@ mutable struct Optimizer
             x_min,
             tol,
             damping,
-            Dict{String, Any}(),
+            Dict{String,Any}(),
             x_max,
             x_init,
             move,
@@ -114,10 +114,10 @@ function generate_optimizer(filename::String)::Optimizer
     end
 
     for node_data in data["input_structure"]["nodes"]
-        node = Node(node_data["id"], 
-                    Vector{Float64}(node_data["position"]), 
-                    force=Vector{Float64}(node_data["force"]), 
-                    constraint=Vector{Bool}(node_data["support"]))
+        node = Node(node_data["id"],
+            Vector{Float64}(node_data["position"]),
+            force=Vector{Float64}(node_data["force"]),
+            constraint=Vector{Bool}(node_data["support"]))
         push!(nodes, node)
     end
 
@@ -131,13 +131,13 @@ function generate_optimizer(filename::String)::Optimizer
     end
 
     structure = Structure(nodes, elements)
-    
+
     # =================== Create optimizer ===================
     comp = NaN
     if data["optimizer"]["compliance_p_norm"]["use"]
-        comp = ComplianceSmoothPNorm(structure, 
-                                        p=data["optimizer"]["compliance_p_norm"]["p"],
-                                        unique_loads_angle=false)
+        comp = ComplianceSmoothPNorm(structure,
+            p=data["optimizer"]["compliance_p_norm"]["p"],
+            unique_loads_angle=false)
     end
     if data["optimizer"]["compliance_nominal"]["use"]
         if comp === NaN
@@ -154,16 +154,16 @@ function generate_optimizer(filename::String)::Optimizer
         end
     end
 
-    return Optimizer(comp, 
-                    filename,
-                    volume_max=data["optimizer"]["volume_max"],
-                    initial_move_parameter=data["optimizer"]["initial_move_multiplier"],
-                    use_adaptive_move=data["optimizer"]["use_adaptive_move"],
-                    min_iters=data["optimizer"]["min_iterations"],
-                    max_iters=data["optimizer"]["max_iterations"],
-                    x_min=data["optimizer"]["x_min"],
-                    tol=data["optimizer"]["tolerance"],
-                    damping=data["optimizer"]["initial_damping_parameter"])
+    return Optimizer(comp,
+        filename,
+        volume_max=data["optimizer"]["volume_max"],
+        initial_move_parameter=data["optimizer"]["initial_move_multiplier"],
+        use_adaptive_move=data["optimizer"]["use_adaptive_move"],
+        min_iters=data["optimizer"]["min_iterations"],
+        max_iters=data["optimizer"]["max_iterations"],
+        x_min=data["optimizer"]["x_min"],
+        tol=data["optimizer"]["tolerance"],
+        damping=data["optimizer"]["initial_damping_parameter"])
 end
 
 function consider_layout_constraint!(opt::Optimizer)
@@ -296,7 +296,7 @@ function add_output_data(opt::Optimizer)
     save_data = "save_data"
     iterations = "iterations"
 
-    it_dict = Dict{String, Any}()
+    it_dict = Dict{String,Any}()
 
     if opt.iter % opt.output[save_data]["step"] == 0
         if opt.output[save_data]["save_areas"]
@@ -304,7 +304,11 @@ function add_output_data(opt::Optimizer)
         end
 
         if opt.output[save_data]["save_forces"]
-            it_dict["forces"] = forces(opt.compliance.base)
+            if opt.compliance isa ComplianceNominal
+                it_dict["forces"] = forces(opt.compliance.base.structure)
+            else
+                it_dict["forces"] = forces(opt.compliance.base)
+            end
         end
 
         if opt.output[save_data]["save_compliance"]
@@ -317,6 +321,10 @@ function add_output_data(opt::Optimizer)
 
         if opt.output[save_data]["save_move"]
             it_dict["move"] = opt.move
+        end
+
+        if opt.output[save_data]["save_angles"]
+            it_dict["angles"] = forces_angles_per_node(opt)
         end
 
         if !isempty(it_dict)
@@ -371,7 +379,7 @@ function optimize!(opt::Optimizer)
     end
 
     @info "================== Optimization finished =================="
-    
+
     output_summary(opt)
 
 end
@@ -387,9 +395,13 @@ function output_summary(opt::Optimizer)
     @info "Mean move: $(length(mean(opt.move)))"
 end
 
-function angle(opt::Optimizer)
-    forces = H(opt.compliance.base) * opt.compliance.base.eig_vecs[:, end]
-    fx, fy = [f for f in forces if abs(f) > 0.0][1:2]
-
-    return atand(fy, fx)
+function forces_angles_per_node(opt::Optimizer)
+    if opt.compliance isa ComplianceNominal
+        f = forces(opt.compliance.base.structure)
+    else
+        f = forces(opt.compliance.base)
+    end
+    
+    angs = [atan(f[i+1], f[i]) for i in 1:2:length(f)]
+    return angs
 end

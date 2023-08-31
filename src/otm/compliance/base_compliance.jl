@@ -155,5 +155,7 @@ function diff_C(base::BaseCompliance)
 end
 
 function forces(base::BaseCompliance)
-    return H(base) * base.eig_vecs[:, end]
+    f = zeros(number_of_dofs(base.structure))
+    f[dofs(base.structure)] = H(base) * base.eig_vecs[:, end]
+    return f
 end
