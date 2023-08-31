@@ -153,3 +153,7 @@ function diff_C(base::BaseCompliance)
 
     return g
 end
+
+function forces(base::BaseCompliance)
+    return H(base) * base.eig_vecs[:, end]
+end

@@ -31,3 +31,7 @@ end
 function min_max_obj(compliance::ComplianceNominal)
     return [-1.0, -1.0]
 end
+
+function forces(base::ComplianceNominal)
+    return forces(base.structure, include_restricted=true)
+end
