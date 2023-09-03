@@ -35,7 +35,7 @@ mutable struct Optimizer
 
     vol::Float64
 
-    layout_constraint::Union{Dict{Int64, Vector{Int64}},Nothing}
+    layout_constraint::Union{Dict{Int64,Vector{Int64}},Nothing}
     layout_constraint_divisions::Union{Int}
 
     function Optimizer(compliance::T, filename::String; volume_max::Float64=1.0,
@@ -47,7 +47,7 @@ mutable struct Optimizer
         x_min::Float64=1e-12,
         tol::Float64=1e-8,
         damping::Float64=0.0,
-        layout_constraint::Union{Dict{Int64, Vector{Int64}},Nothing}=nothing,
+        layout_constraint::Union{Dict{Int64,Vector{Int64}},Nothing}=nothing,
         layout_constraint_divisions::Union{Int}=0) where {T<:Compliance}
 
         els_len = [len(el) for el in compliance.base.structure.elements]
@@ -103,6 +103,16 @@ function generate_optimizer(filename::String)::Optimizer
     # =================== Read data ===================
     data = JSON.parsefile(filename)
 
+    try
+        delete!(data, "iterations")
+    catch
+    end
+
+    try
+        delete!(data, "last_iteration")
+    catch
+    end
+
     # =================== Create structure ===================
     nodes::Vector{Node} = []
     elements::Vector{Element} = []
@@ -120,7 +130,7 @@ function generate_optimizer(filename::String)::Optimizer
             constraint=Vector{Bool}(node_data["support"]))
         push!(nodes, node)
     end
-
+   
     layout_constraints = Dict{Int64,Vector{Int64}}()
     for element_data in data["input_structure"]["elements"]
         id = element_data["id"]
@@ -128,11 +138,13 @@ function generate_optimizer(filename::String)::Optimizer
         node2 = nodes[element_data["nodes"][2]]
         material = materials[element_data["material"]]
 
-        if element_data["layout_constraint"] > 0
-            try
-                push!(layout_constraints[element_data["layout_constraint"]], id)
-            catch
-                layout_constraints[element_data["layout_constraint"]] = [id]
+        if data["optimizer"]["use_layout_constraint"]
+            if element_data["layout_constraint"] > 0
+                try
+                    push!(layout_constraints[element_data["layout_constraint"]], id)
+                catch
+                    layout_constraints[element_data["layout_constraint"]] = [id]
+                end
             end
         end
 
@@ -178,6 +190,7 @@ function generate_optimizer(filename::String)::Optimizer
         x_min=data["optimizer"]["x_min"],
         tol=data["optimizer"]["tolerance"],
         damping=data["optimizer"]["initial_damping_parameter"],
+        use_adaptive_damping=data["optimizer"]["use_adaptive_damping"],
         layout_constraint=layout_constraints)
 end
 
@@ -294,49 +307,62 @@ function update_x!(opt::Optimizer)
     set_areas(opt)
 end
 
+function add_last_iteration(opt::Optimizer)
+    it_dict = Dict{String,Any}()
+    it_dict["areas"] = get_areas(opt)
+    if opt.compliance isa ComplianceNominal
+        it_dict["forces"] = forces(opt.compliance.base.structure)
+    else
+        it_dict["forces"] = forces(opt.compliance.base)
+    end
+    it_dict["compliance"] = obj(opt.compliance)
+    it_dict["volume"] = opt.vol
+    it_dict["move"] = opt.move
+    it_dict["angles"] = forces_angles_per_node(opt)
+    opt.output["last_iteration"] = it_dict
+end
+
 function add_output_data(opt::Optimizer)
     save_data = "save_data"
     iterations = "iterations"
 
     it_dict = Dict{String,Any}()
 
-    if opt.iter % opt.output[save_data]["step"] == 0
-        if opt.output[save_data]["save_areas"]
-            it_dict["areas"] = get_areas(opt)
+    if opt.output[save_data]["save_areas"]
+        it_dict["areas"] = get_areas(opt)
+    end
+
+    if opt.output[save_data]["save_forces"]
+        if opt.compliance isa ComplianceNominal
+            it_dict["forces"] = forces(opt.compliance.base.structure)
+        else
+            it_dict["forces"] = forces(opt.compliance.base)
         end
+    end
 
-        if opt.output[save_data]["save_forces"]
-            if opt.compliance isa ComplianceNominal
-                it_dict["forces"] = forces(opt.compliance.base.structure)
-            else
-                it_dict["forces"] = forces(opt.compliance.base)
-            end
-        end
+    if opt.output[save_data]["save_compliance"]
+        it_dict["compliance"] = obj(opt.compliance)
+    end
 
-        if opt.output[save_data]["save_compliance"]
-            it_dict["compliance"] = obj(opt.compliance)
-        end
+    if opt.output[save_data]["save_volume"]
+        it_dict["volume"] = opt.vol
+    end
 
-        if opt.output[save_data]["save_volume"]
-            it_dict["volume"] = opt.vol
-        end
+    if opt.output[save_data]["save_move"]
+        it_dict["move"] = opt.move
+    end
 
-        if opt.output[save_data]["save_move"]
-            it_dict["move"] = opt.move
-        end
+    if opt.output[save_data]["save_angles"]
+        it_dict["angles"] = forces_angles_per_node(opt)
+    end
 
-        if opt.output[save_data]["save_angles"]
-            it_dict["angles"] = forces_angles_per_node(opt)
-        end
+    if !isempty(it_dict)
+        it_dict["id"] = opt.iter
 
-        if !isempty(it_dict)
-            it_dict["id"] = opt.iter
-
-            try
-                push!(opt.output[iterations], it_dict)
-            catch
-                opt.output[iterations] = [it_dict]
-            end
+        try
+            push!(opt.output[iterations], it_dict)
+        catch
+            opt.output[iterations] = [it_dict]
         end
     end
 end
@@ -367,7 +393,9 @@ function optimize!(opt::Optimizer)
         opt.x_km2 = copy(opt.x_km1)
         opt.x_km1 = copy(x_k_tmp)
 
-        add_output_data(opt)
+        if opt.iter % opt.output["save_data"]["step"] == 0
+            add_output_data(opt)
+        end
 
         error = ifelse(opt.iter <= opt.min_iters, Inf, norm((opt.x_k - opt.x_km1) ./ (1 .+ opt.x_km1), Inf))
 
@@ -376,7 +404,9 @@ function optimize!(opt::Optimizer)
         opt.iter += 1
     end
 
-    open("$(replace(opt.filename, ".json" => "_output.json"))", "w") do io
+    add_last_iteration(opt)
+
+    open("$(opt.filename)", "w") do io
         JSON.print(io, opt.output)
     end
 
@@ -403,7 +433,7 @@ function forces_angles_per_node(opt::Optimizer)
     else
         f = forces(opt.compliance.base)
     end
-    
+
     angs = [atan(f[i+1], f[i]) for i in 1:2:length(f)]
     return angs
 end
