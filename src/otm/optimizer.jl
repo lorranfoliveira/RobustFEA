@@ -119,12 +119,12 @@ function generate_optimizer(filename::String)::Optimizer
     materials::Vector{Material} = []
 
     for material_data in data["input_structure"]["materials"]
-        material = Material(material_data["id"], material_data["young"])
+        material = Material(material_data["idt"], material_data["young"])
         push!(materials, material)
     end
 
     for node_data in data["input_structure"]["nodes"]
-        node = Node(node_data["id"],
+        node = Node(node_data["idt"],
             Vector{Float64}(node_data["position"]),
             force=Vector{Float64}(node_data["force"]),
             constraint=Vector{Bool}(node_data["support"]))
@@ -133,7 +133,7 @@ function generate_optimizer(filename::String)::Optimizer
    
     layout_constraints = Dict{Int64,Vector{Int64}}()
     for element_data in data["input_structure"]["elements"]
-        id = element_data["id"]
+        id = element_data["idt"]
         node1 = nodes[element_data["nodes"][1]]
         node2 = nodes[element_data["nodes"][2]]
         material = materials[element_data["material"]]
@@ -160,24 +160,15 @@ function generate_optimizer(filename::String)::Optimizer
 
     # =================== Create optimizer ===================
     comp = NaN
-    if data["optimizer"]["compliance_p_norm"]["use"]
+    comp_file = data["optimizer"]["compliance"]
+    if comp_file["key"] == "p_norm"
         comp = ComplianceSmoothPNorm(structure,
-            p=data["optimizer"]["compliance_p_norm"]["p"],
+            p=comp_file["parameters"]["p"],
             unique_loads_angle=false)
-    end
-    if data["optimizer"]["compliance_nominal"]["use"]
-        if comp === NaN
-            comp = ComplianceNominal(structure)
-        else
-            throw(ArgumentError("Only one compliance type can be used."))
-        end
-    end
-    if data["optimizer"]["compliance_mu"]["use"]
-        if comp === NaN
-            comp = ComplianceSmoothMu(structure, β=data["optimizer"]["compliance_mu"]["beta"])
-        else
-            throw(ArgumentError("Only one compliance type can be used."))
-        end
+    elseif comp_file["key"] == "nominal"
+        comp = ComplianceNominal(structure)
+    elseif comp_file["key"] == "mu"
+        comp = ComplianceSmoothMu(structure, β=comp_file["parameters"]["beta"])
     end
 
     return Optimizer(comp,
@@ -189,7 +180,7 @@ function generate_optimizer(filename::String)::Optimizer
         max_iters=data["optimizer"]["max_iterations"],
         x_min=data["optimizer"]["x_min"],
         tol=data["optimizer"]["tolerance"],
-        damping=data["optimizer"]["initial_damping_parameter"],
+        damping=data["optimizer"]["initial_damping"],
         use_adaptive_damping=data["optimizer"]["use_adaptive_damping"],
         layout_constraint=layout_constraints)
 end
@@ -357,7 +348,7 @@ function add_output_data(opt::Optimizer)
     end
 
     if !isempty(it_dict)
-        it_dict["id"] = opt.iter
+        it_dict["idt"] = opt.iter
 
         try
             push!(opt.output[iterations], it_dict)

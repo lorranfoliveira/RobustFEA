@@ -60,7 +60,7 @@ class Optimizer(BaseData):
                 f'tolerance={self.tolerance})')
 
     def to_dict(self):
-        return {'optimizer': {'compliance': self.compliance.key,
+        return {'optimizer': {'compliance': self.compliance.to_dict(),
                               'volume_max': self.volume_max,
                               'min_iterations': self.min_iterations,
                               'max_iterations': self.max_iterations,

@@ -10,12 +10,16 @@ class Compliance(BaseData):
     def key(self) -> str:
         return self._KEY
 
+    def parameters(self) -> dict:
+        pass
+
     @classmethod
     def read_dict(cls, dct: dict) -> type(Compliance):
         pass
 
     def to_dict(self):
-        return {'key': self.key}
+        return {'key': self.key,
+                "parameters": self.parameters()}
 
 
 class ComplianceNominal(Compliance):
@@ -40,10 +44,8 @@ class ComplianceMu(Compliance):
     def read_dict(cls, dct: dict) -> type(Compliance):
         return cls(beta=dct['parameters']['beta'])
 
-    def to_dict(self):
-        dct = super().to_dict()
-        dct['beta'] = self.beta
-        return dct
+    def parameters(self) -> dict:
+        return {'beta': self.beta}
 
 
 class CompliancePNorm(Compliance):
@@ -57,7 +59,5 @@ class CompliancePNorm(Compliance):
     def read_dict(cls, dct: dict) -> type(Compliance):
         return cls(p=dct['parameters']['p'])
 
-    def to_dict(self):
-        dct = super().to_dict()
-        dct['p'] = self.p
-        return dct
+    def parameters(self) -> dict:
+        return {'p': self.p}

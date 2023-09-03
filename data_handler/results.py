@@ -3,9 +3,9 @@ from .base_data import BaseData
 
 
 class Iteration(BaseData):
-    def __int__(self, idt: int, angles: list[float] | None = None, areas: list[float] | None = None,
-                forces: list[float] | None = None, compliance: float | None = None, move: list[float] | None = None,
-                volume: float | None = None, error: float | None = None):
+    def __init__(self, idt: int, angles: list[float] | None = None, areas: list[float] | None = None,
+                 forces: list[float] | None = None, compliance: float | None = None, move: list[float] | None = None,
+                 volume: float | None = None, error: float | None = None):
         self.idt = idt
         self.angles = angles
         self.areas = areas
@@ -74,6 +74,8 @@ class Iteration(BaseData):
 
 
 class ResultIterations(BaseData):
+    KEY = 'iterations'
+
     def __init__(self, iterations: list[Iteration]):
         self.iterations = iterations
         super().__init__()
@@ -81,19 +83,21 @@ class ResultIterations(BaseData):
     @classmethod
     def read_dict(cls, dct: dict) -> ResultIterations:
         iterations = []
-        for iteration in dct['iterations']:
+        for iteration in dct[cls.KEY]:
             iterations.append(Iteration.read_dict(iteration))
         return cls(iterations=iterations)
 
 
 class LastIteration(BaseData):
+    KEY = 'last_iteration'
+
     def __init__(self, last_iteration: Iteration):
         self.last_iteration = last_iteration
         super().__init__()
 
     @classmethod
     def read_dict(cls, dct: dict) -> LastIteration:
-        return cls(last_iteration=Iteration.read_dict(dct['last_iteration']))
+        return cls(last_iteration=Iteration.read_dict(dct[cls.KEY]))
 
     def to_dict(self):
         return {'last_iteration': self.last_iteration.to_dict()}

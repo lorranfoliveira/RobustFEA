@@ -7,70 +7,6 @@ from matplotlib.patches import PathPatch, FancyArrow
 import matplotlib.colors as colors
 import numpy as np
 from matplotlib.collections import PatchCollection
-from .data_to_save import SaveData
-from compliances import Compliance, ComplianceNominal, ComplianceMu, CompliancePNorm
-
-from .optimizer import Optimizer
-from .results import Iteration, ResultIterations, LastIteration
-from .structure import Node, Element, Structure
-
-
-class Modeller:
-    def __init__(self, data_to_save: SaveData, structure: Structure, compliance: type(Compliance),
-                 optimizer: Optimizer, result: ResultIterations, last_iteration: LastIteration):
-        self.data_to_save = data_to_save
-        self.compliance = compliance
-        self.optimizer = optimizer
-        self.result_iterations = result
-        self.last_iteration = last_iteration
-        self.structure = structure
-
-    @classmethod
-    def read_dict(cls, dct: dict)->Modeller:
-        data_to_save = SaveData.read_dict(dct['data_to_save'])
-        compliance = Compliance.read_dict(dct['compliance'])
-        optimizer = Optimizer.read_dict(dct['optimizer'])
-        result = ResultIterations.read_dict(dct['result'])
-        last_iteration = LastIteration.read_dict(dct['last_iteration'])
-        structure = Structure.read_dict(dct['input_structure'])
-        return cls(data_to_save=data_to_save,
-                   structure=structure,
-                   compliance=compliance,
-                   optimizer=optimizer,
-                   result=result,
-                   last_iteration=last_iteration)
-
-    def to_dict(self):
-        return {'data_to_save': self.data_to_save.to_dict(),
-                'input_structure': self.structure.to_dict(),
-                'optimizer': self.optimizer.to_dict(),
-                'iterations': self.result_iterations.to_dict(),
-                'last_iteration': self.last_iteration.to_dict()}
-
-
-
-class DataHandler:
-    def __init__(self, filename: str):
-        self.filename = filename
-        with open(filename, 'r') as file:
-            self.data = json.load(file)
-
-    def nodes(self):
-        return self.data['input_structure']['nodes']
-
-    def elements(self):
-        return self.data['input_structure']['elements']
-
-    def layout_constraints(self):
-        layout_constraints = []
-        i = 0
-        for element in self.elements():
-            if (lc_el := element['layout_constraint']) > 0:
-                if lc_el <= len(layout_constraints):
-                    layout_constraints[lc_el - 1].append([i])
-                else:
-                    layout_constraints.append([i])
-                i += 1
 
 
 class Plotter:
@@ -266,9 +202,9 @@ class Plotter:
         plt.show()
 
 
-p0 = Plotter('../final_examples/hook_1.json')
+p0 = Plotter('../final_examples/hook_5.json')
 
-p = Plotter('../final_examples/hook_5.json',
+p = Plotter('../final_examples/hook_8.json',
             supports_forces_size=0.75,
             supports_forces_width=1,
             lc_width=2,
@@ -279,10 +215,10 @@ p = Plotter('../final_examples/hook_5.json',
 
 p.plot_initial_structure()
 p.plot_optimized_structure()
-p.plot_compliance()
-
-elements_ids = p.get_lc_elements()
-area_max = max(p.get_max_lc_area(elements_ids), p0.get_max_lc_area(elements_ids))
-
-p.plot_lc_areas(elements_ids, 'red', 'Restricted elements', area_max)
-p0.plot_lc_areas(elements_ids, 'blue', 'Non-restricted elements', area_max)
+# p.plot_compliance()
+#
+# elements_ids = p.get_lc_elements()
+# area_max = max(p.get_max_lc_area(elements_ids), p0.get_max_lc_area(elements_ids))
+#
+# p.plot_lc_areas(elements_ids, 'red', 'Restricted elements', area_max)
+# p0.plot_lc_areas(elements_ids, 'blue', 'Non-restricted elements', area_max)

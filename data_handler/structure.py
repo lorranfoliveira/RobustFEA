@@ -16,6 +16,12 @@ class Node(BaseData):
     def read_dict(cls, dct: dict) -> Node:
         return cls(**dct)
 
+    def to_dict(self):
+        return {'idt': self.idt,
+                'position': self.position,
+                'force': self.force,
+                'support': self.support}
+
 
 class Material(BaseData):
     def __init__(self, idt: int, young: float):
@@ -71,8 +77,17 @@ class Structure(BaseData):
     @classmethod
     def read_dict(cls, dct: dict) -> type(BaseData):
         nodes = [Node.read_dict(node) for node in dct['nodes']]
-        elements = [Element.read_dict(element) for element in dct['elements']]
         materials = [Material.read_dict(material) for material in dct['materials']]
+
+        elements = []
+        for el in dct['elements']:
+            nodes_el = [node for node in nodes if node.idt in el['nodes']]
+            material_el = materials[el['material'] - 1]
+            elements.append(Element(idt=el['idt'],
+                                    nodes=nodes_el,
+                                    material=material_el,
+                                    area=el['area'],
+                                    layout_constraint=el['layout_constraint']))
         return cls(nodes=nodes, elements=elements, materials=materials)
 
     def to_dict(self):
