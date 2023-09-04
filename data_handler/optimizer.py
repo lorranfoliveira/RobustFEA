@@ -47,7 +47,7 @@ class Optimizer(BaseData):
                    initial_move_multiplier=dct[cls.KEY]['initial_move_multiplier'],
                    use_adaptive_damping=dct[cls.KEY]['use_adaptive_damping'],
                    initial_damping=dct[cls.KEY]['initial_damping'],
-                   use_layout_constraint=dct[cls.KEY]['use_layout_constraint'],
+                   use_layout_constraint=dct[cls.KEY]['use_layout_constraints'],
                    x_min=dct[cls.KEY]['x_min'],
                    tolerance=dct[cls.KEY]['tolerance'])
 
@@ -60,15 +60,14 @@ class Optimizer(BaseData):
                 f'tolerance={self.tolerance})')
 
     def to_dict(self):
-        return {'optimizer': {'compliance': self.compliance.to_dict(),
-                              'volume_max': self.volume_max,
-                              'min_iterations': self.min_iterations,
-                              'max_iterations': self.max_iterations,
-                              'use_adaptive_move': self.use_adaptive_move,
-                              'initial_move_multiplier': self.initial_move_multiplier,
-                              'use_adaptive_damping': self.use_adaptive_damping,
-                              'initial_damping': self.initial_damping,
-                              'use_layout_constraints': self.use_layout_constraint,
-                              'x_min': self.x_min,
-                              'tolerance': self.tolerance}
-                }
+        return {'compliance': self.compliance.to_dict(),
+                'volume_max': self.volume_max,
+                'min_iterations': self.min_iterations,
+                'max_iterations': self.max_iterations,
+                'use_adaptive_move': self.use_adaptive_move,
+                'initial_move_multiplier': self.initial_move_multiplier,
+                'use_adaptive_damping': self.use_adaptive_damping,
+                'initial_damping': self.initial_damping,
+                'use_layout_constraints': self.use_layout_constraint,
+                'x_min': self.x_min,
+                'tolerance': self.tolerance}

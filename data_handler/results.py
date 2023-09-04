@@ -17,7 +17,10 @@ class Iteration(BaseData):
 
     @classmethod
     def read_dict(cls, dct: dict) -> Iteration:
-        idt = dct['idt']
+        try:
+            idt = dct['idt']
+        except KeyError:
+            idt = None
         try:
             angles = dct['angles']
         except KeyError:
@@ -92,7 +95,7 @@ class LastIteration(BaseData):
     KEY = 'last_iteration'
 
     def __init__(self, last_iteration: Iteration):
-        self.last_iteration = last_iteration
+        self.iteration = last_iteration
         super().__init__()
 
     @classmethod
@@ -100,4 +103,4 @@ class LastIteration(BaseData):
         return cls(last_iteration=Iteration.read_dict(dct[cls.KEY]))
 
     def to_dict(self):
-        return {'last_iteration': self.last_iteration.to_dict()}
+        return {'last_iteration': self.iteration.to_dict()}

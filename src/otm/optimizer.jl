@@ -138,7 +138,7 @@ function generate_optimizer(filename::String)::Optimizer
         node2 = nodes[element_data["nodes"][2]]
         material = materials[element_data["material"]]
 
-        if data["optimizer"]["use_layout_constraint"]
+        if data["optimizer"]["use_layout_constraints"]
             if element_data["layout_constraint"] > 0
                 try
                     push!(layout_constraints[element_data["layout_constraint"]], id)
@@ -361,7 +361,7 @@ end
 function optimize!(opt::Optimizer)
     opt.output = JSON.parsefile(opt.filename)
     error = Inf
-    opt.iter = 0
+    opt.iter = 1
     set_areas(opt)
 
     while error > opt.tol && opt.iter < opt.max_iters

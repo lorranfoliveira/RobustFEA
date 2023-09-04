@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.path import Path
 from matplotlib.patches import PathPatch, FancyArrow
 import matplotlib.colors as colors
+from matplotlib import cm
 import numpy as np
 from matplotlib.collections import PatchCollection
 from .save_data import SaveData
@@ -58,12 +59,12 @@ class Modeller:
         except AttributeError:
             pass
 
-        result.update({'data_to_save': self.data_to_save.to_dict(),
+        result.update({'save_data': self.data_to_save.to_dict(),
                        'input_structure': self.structure.to_dict(),
                        'optimizer': self.optimizer.to_dict()})
         return result
 
-    def write(self):
+    def write_json(self):
         with open(self.filename, 'w') as file:
             json.dump(self.to_dict(), file)
 
@@ -96,7 +97,8 @@ class Modeller:
                     if (node := tuple(entity.dxf.location)[:2]) not in nodes:
                         nodes.append(node)
                     info = layer.split('_')
-                    nodes_info.append((nodes.index(node), float(info[1]), float(info[2]), bool(info[3]), bool(info[4])))
+                    nodes_info.append((nodes.index(node), float(info[1]), float(info[2]), info[3] == "True",
+                                       info[4] == "True"))
 
         # Creating structure
         nodes_structure = []
@@ -148,5 +150,115 @@ class Modeller:
 
                 msp.add_point(node.position, dxfattribs={'layer': layer_name})
 
-        # doc.saveas(f'{self.filename.replace(".json", ".dxf")}')
-        doc.saveas(f'teste.dxf')
+        doc.saveas(f'{self.filename.replace(".json", ".dxf")}')
+
+    def x_limits(self) -> tuple[float, float]:
+        x_min = min([node.position[0] for node in self.structure.nodes])
+        x_max = max([node.position[0] for node in self.structure.nodes])
+        return x_min - 0.1 * (x_max - x_min), x_max + 0.1 * (x_max - x_min)
+
+    def y_limits(self) -> tuple[float, float]:
+        y_min = min([node.position[1] for node in self.structure.nodes])
+        y_max = max([node.position[1] for node in self.structure.nodes])
+        return y_min - 0.1 * (y_max - y_min), y_max + 0.1 * (y_max - y_min)
+
+    def last_iteration_norm_areas(self) -> np.ndarray:
+        areas = np.array(self.last_iteration.iteration.areas)
+        return areas / areas.max()
+
+    def get_support_markers(self, size: float, width: float, color: str) -> list[PathPatch]:
+        patches = []
+        for node in self.structure.nodes:
+            if node.support[0]:
+                v1 = np.array(node.position) + np.array([-size, 0])
+                v2 = np.array(node.position) + np.array([size, 0])
+                path = Path([v1, v2], [Path.MOVETO, Path.LINETO])
+                patches.append(PathPatch(path, edgecolor=color, lw=width))
+            if node.support[1]:
+                v1 = np.array(node.position) + np.array([0, -size])
+                v2 = np.array(node.position) + np.array([0, size])
+                path = Path([v1, v2], [Path.MOVETO, Path.LINETO])
+                patches.append(PathPatch(path, edgecolor=color, lw=width))
+        return patches
+
+    def get_load_markers(self, size: float, width: float, color: str) -> list[PathPatch]:
+        patches = []
+        for node in self.structure.nodes:
+            if node.force[0] != 0:
+                v1 = np.array(node.position) + np.array([-size, 0])
+                v2 = np.array(node.position) + np.array([size, 0])
+                path = Path([v1, v2], [Path.MOVETO, Path.LINETO])
+                patches.append(PathPatch(path, edgecolor=color, lw=width))
+            if node.force[1] != 0:
+                v1 = np.array(node.position) + np.array([0, -size])
+                v2 = np.array(node.position) + np.array([0, size])
+                path = Path([v1, v2], [Path.MOVETO, Path.LINETO])
+                patches.append(PathPatch(path, edgecolor=color, lw=width))
+        return patches
+
+    def plot_initial_structure(self, default_width: float, lc_width: float, supports_markers_width: float,
+                               supports_markers_size: float, forces_markers_width: float, forces_markers_size: float,
+                               plot_supports: bool = True, plot_loads: bool = True,
+                               supports_markers_color: str = 'green',
+                               forces_markers_color: str = 'magenta'):
+        patches = []
+        for element in self.structure.elements:
+            p1 = element.nodes[0].position
+            p2 = element.nodes[1].position
+            path = Path([p1, p2], [Path.MOVETO, Path.LINETO])
+
+            if (lc := element.layout_constraint) == 0:
+                color = 'black'
+                width = default_width
+            else:
+                color = cm.tab20(lc % 20)
+                width = lc_width
+
+            patches.append(PathPatch(path, edgecolor=color, lw=width))
+
+        fig, ax = plt.subplots()
+
+        if plot_supports:
+            patches.extend(self.get_support_markers(supports_markers_size, supports_markers_width,
+                                                    supports_markers_color))
+        if plot_loads:
+            patches.extend(self.get_load_markers(forces_markers_size, forces_markers_width, forces_markers_color))
+
+        ax.add_collection(PatchCollection(patches, match_original=True))
+        ax.set_aspect('equal')
+        ax.axis('off')
+        ax.set_xlim(self.x_limits())
+        ax.set_ylim(self.y_limits())
+        plt.title(f'Initial structure - {self.filename.replace(".json", "")}')
+        plt.show()
+
+    def plot_optimized_structure(self, base_width: float = 1.0, cutoff: float = 1e-4, plot_supports: bool = True,
+                                 plot_loads: bool = True, supports_markers_width: float = 4.0,
+                                 supports_markers_size: float = 0.05, supports_markers_color: str = 'green',
+                                 forces_markers_width: float = 4.0, forces_markers_size: float = 0.05,
+                                 forces_markers_color: str = 'magenta'):
+        colormap = colors.ListedColormap(plt.cm.jet(np.linspace(0, 1, 10)))
+        patches = []
+        areas = self.last_iteration_norm_areas()
+        for i, element in enumerate(self.structure.elements):
+            if areas[i] > cutoff:
+                p1 = element.nodes[0].position
+                p2 = element.nodes[1].position
+                path = Path([p1, p2], [Path.MOVETO, Path.LINETO])
+                patches.append(PathPatch(path, edgecolor=colormap(areas[i]), lw=base_width * areas[i]))
+
+        fig, ax = plt.subplots()
+
+        if plot_supports:
+            patches.extend(self.get_support_markers(supports_markers_size, supports_markers_width,
+                                                    supports_markers_color))
+        if plot_loads:
+            patches.extend(self.get_load_markers(forces_markers_size, forces_markers_width, forces_markers_color))
+
+        ax.add_collection(PatchCollection(patches, match_original=True))
+        ax.set_aspect('equal')
+        ax.axis('off')
+        ax.set_xlim(self.x_limits())
+        ax.set_ylim(self.y_limits())
+        plt.title(f'Optimized structure - {self.filename.replace(".json", "")}')
+        plt.show()
