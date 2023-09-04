@@ -1,0 +1,628 @@
+{
+    "optimizer": {
+        "use_layout_constraints": true,
+        "max_iterations": 15000,
+        "volume_max": 1.0,
+        "use_adaptive_move": false,
+        "initial_damping": 0.0,
+        "initial_move_multiplier": 1.0,
+        "min_iterations": 20,
+        "use_adaptive_damping": false,
+        "compliance": {
+            "key": "mu",
+            "parameters": {
+                "beta": 0.1
+            }
+        },
+        "x_min": 1.0e-12,
+        "tolerance": 1.0e-8
+    },
+    "iterations": [
+        {
+            "compliance": 109.74451966106207,
+            "idt": 1
+        },
+        {
+            "compliance": 73.86571486226231,
+            "idt": 2
+        },
+        {
+            "compliance": 72.9098377217317,
+            "idt": 3
+        },
+        {
+            "compliance": 73.16563695315858,
+            "idt": 4
+        },
+        {
+            "compliance": 72.58819433549456,
+            "idt": 5
+        },
+        {
+            "compliance": 72.0137680058339,
+            "idt": 6
+        },
+        {
+            "compliance": 71.48794915492735,
+            "idt": 7
+        },
+        {
+            "compliance": 71.01732687184179,
+            "idt": 8
+        },
+        {
+            "compliance": 70.59935525238146,
+            "idt": 9
+        },
+        {
+            "compliance": 70.23132813194195,
+            "idt": 10
+        },
+        {
+            "compliance": 69.90976953045723,
+            "idt": 11
+        },
+        {
+            "compliance": 69.63077339425362,
+            "idt": 12
+        },
+        {
+            "compliance": 69.39019705392215,
+            "idt": 13
+        },
+        {
+            "compliance": 69.18385996792477,
+            "idt": 14
+        },
+        {
+            "compliance": 69.00770446631053,
+            "idt": 15
+        },
+        {
+            "compliance": 68.85790550774163,
+            "idt": 16
+        },
+        {
+            "compliance": 68.73094305046598,
+            "idt": 17
+        },
+        {
+            "compliance": 68.62363817900066,
+            "idt": 18
+        },
+        {
+            "compliance": 68.53316052553008,
+            "idt": 19
+        },
+        {
+            "compliance": 68.45702034137193,
+            "idt": 20
+        },
+        {
+            "compliance": 68.39305191601073,
+            "idt": 21
+        },
+        {
+            "compliance": 68.3393824462265,
+            "idt": 22
+        },
+        {
+            "compliance": 68.29440548273479,
+            "idt": 23
+        },
+        {
+            "compliance": 68.25674788490434,
+            "idt": 24
+        },
+        {
+            "compliance": 68.22524452897608,
+            "idt": 25
+        },
+        {
+            "compliance": 68.19890620371623,
+            "idt": 26
+        },
+        {
+            "compliance": 68.17689845172217,
+            "idt": 27
+        },
+        {
+            "compliance": 68.15851769874753,
+            "idt": 28
+        },
+        {
+            "compliance": 68.14317087649968,
+            "idt": 29
+        },
+        {
+            "compliance": 68.13036278197171,
+            "idt": 30
+        },
+        {
+            "compliance": 68.11967497252576,
+            "idt": 31
+        },
+        {
+            "compliance": 68.1107592624854,
+            "idt": 32
+        },
+        {
+            "compliance": 68.10332251730615,
+            "idt": 33
+        },
+        {
+            "compliance": 68.09712095044992,
+            "idt": 34
+        },
+        {
+            "compliance": 68.09194911112868,
+            "idt": 35
+        },
+        {
+            "compliance": 68.0876373345456,
+            "idt": 36
+        },
+        {
+            "compliance": 68.08404267591658,
+            "idt": 37
+        },
+        {
+            "compliance": 68.08104628925878,
+            "idt": 38
+        },
+        {
+            "compliance": 68.07854817651253,
+            "idt": 39
+        },
+        {
+            "compliance": 68.0764659848866,
+            "idt": 40
+        },
+        {
+            "compliance": 68.07473043983944,
+            "idt": 41
+        },
+        {
+            "compliance": 68.07328393600507,
+            "idt": 42
+        },
+        {
+            "compliance": 68.0720783914372,
+            "idt": 43
+        },
+        {
+            "compliance": 68.07107389560043,
+            "idt": 44
+        },
+        {
+            "compliance": 68.07023658920536,
+            "idt": 45
+        },
+        {
+            "compliance": 68.06953843388078,
+            "idt": 46
+        },
+        {
+            "compliance": 68.06895662449503,
+            "idt": 47
+        },
+        {
+            "compliance": 68.06847219353024,
+            "idt": 48
+        },
+        {
+            "compliance": 68.06806794014275,
+            "idt": 49
+        },
+        {
+            "compliance": 68.0677312725129,
+            "idt": 50
+        },
+        {
+            "compliance": 68.06745110115085,
+            "idt": 51
+        },
+        {
+            "compliance": 68.0672173819203,
+            "idt": 52
+        },
+        {
+            "compliance": 68.06702215640922,
+            "idt": 53
+        },
+        {
+            "compliance": 68.06685970962066,
+            "idt": 54
+        },
+        {
+            "compliance": 68.0667246733314,
+            "idt": 55
+        },
+        {
+            "compliance": 68.0666117645816,
+            "idt": 56
+        },
+        {
+            "compliance": 68.06651779944826,
+            "idt": 57
+        },
+        {
+            "compliance": 68.06643992275878,
+            "idt": 58
+        },
+        {
+            "compliance": 68.066374335876,
+            "idt": 59
+        },
+        {
+            "compliance": 68.06631980087059,
+            "idt": 60
+        },
+        {
+            "compliance": 68.06627498216746,
+            "idt": 61
+        },
+        {
+            "compliance": 68.06623694131659,
+            "idt": 62
+        },
+        {
+            "compliance": 68.06620566402384,
+            "idt": 63
+        },
+        {
+            "compliance": 68.06617941422093,
+            "idt": 64
+        },
+        {
+            "compliance": 68.06615735382294,
+            "idt": 65
+        },
+        {
+            "compliance": 68.06613908875833,
+            "idt": 66
+        },
+        {
+            "compliance": 68.06612418924263,
+            "idt": 67
+        },
+        {
+            "compliance": 68.06611168858669,
+            "idt": 68
+        },
+        {
+            "compliance": 68.06610078123492,
+            "idt": 69
+        },
+        {
+            "compliance": 68.0660921144484,
+            "idt": 70
+        },
+        {
+            "compliance": 68.06608480764763,
+            "idt": 71
+        },
+        {
+            "compliance": 68.06607893843442,
+            "idt": 72
+        },
+        {
+            "compliance": 68.06607376006929,
+            "idt": 73
+        },
+        {
+            "compliance": 68.06606956311055,
+            "idt": 74
+        },
+        {
+            "compliance": 68.06606587970647,
+            "idt": 75
+        },
+        {
+            "compliance": 68.06606272568821,
+            "idt": 76
+        },
+        {
+            "compliance": 68.06606062138088,
+            "idt": 77
+        },
+        {
+            "compliance": 68.06605817471457,
+            "idt": 78
+        },
+        {
+            "compliance": 68.06605696414366,
+            "idt": 79
+        },
+        {
+            "compliance": 68.06605546510859,
+            "idt": 80
+        },
+        {
+            "compliance": 68.06605392853952,
+            "idt": 81
+        },
+        {
+            "compliance": 68.06605317210206,
+            "idt": 82
+        },
+        {
+            "compliance": 68.06605215293713,
+            "idt": 83
+        }
+    ],
+    "last_iteration": {
+        "forces": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -0.24250655171898725,
+            -0.9701497680118086,
+            0.0,
+            0.0
+        ],
+        "volume": 1.0000000183952842,
+        "areas": [
+            1.0e-12,
+            0.23528409077927454,
+            1.0e-12,
+            0.1470738354046729,
+            0.14707376531373068,
+            0.16637095130398732,
+            0.16637095130482313,
+            4.958237256291836e-8,
+            3.5060309411578305e-8,
+            3.5060309411578305e-8,
+            4.95825210799848e-8
+        ],
+        "compliance": 68.06605215293713,
+        "move": [
+            0.07900857355927175,
+            0.07900857355927175,
+            0.07900857355927175,
+            0.07900857355927175,
+            0.07900857355927175,
+            0.07900857355927175,
+            0.07900857355927175,
+            0.07900857355927175,
+            0.07900857355927175,
+            0.07900857355927175,
+            0.07900857355927175
+        ],
+        "angles": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -1.8157450219444404,
+            0.0
+        ]
+    },
+    "save_data": {
+        "save_angles": false,
+        "step": 1,
+        "save_forces": false,
+        "save_move": false,
+        "save_areas": false,
+        "save_compliance": true,
+        "save_error": false,
+        "save_volume": false
+    },
+    "input_structure": {
+        "nodes": [
+            {
+                "support": [
+                    true,
+                    true
+                ],
+                "position": [
+                    0.0,
+                    0.0
+                ],
+                "force": [
+                    0.0,
+                    0.0
+                ],
+                "idt": 1
+            },
+            {
+                "support": [
+                    true,
+                    true
+                ],
+                "position": [
+                    0.0,
+                    0.9999999999999999
+                ],
+                "force": [
+                    0.0,
+                    0.0
+                ],
+                "idt": 2
+            },
+            {
+                "support": [
+                    false,
+                    false
+                ],
+                "position": [
+                    0.9999999999999999,
+                    0.9999999999999999
+                ],
+                "force": [
+                    0.0,
+                    0.0
+                ],
+                "idt": 3
+            },
+            {
+                "support": [
+                    false,
+                    false
+                ],
+                "position": [
+                    0.9999999999999999,
+                    0.0
+                ],
+                "force": [
+                    0.0,
+                    0.0
+                ],
+                "idt": 4
+            },
+            {
+                "support": [
+                    false,
+                    false
+                ],
+                "position": [
+                    1.9999999999999998,
+                    0.0
+                ],
+                "force": [
+                    1.0,
+                    1.0
+                ],
+                "idt": 5
+            },
+            {
+                "support": [
+                    false,
+                    false
+                ],
+                "position": [
+                    1.9999999999999998,
+                    0.9999999999999999
+                ],
+                "force": [
+                    0.0,
+                    0.0
+                ],
+                "idt": 6
+            }
+        ],
+        "elements": [
+            {
+                "nodes": [
+                    1,
+                    2
+                ],
+                "material": 1,
+                "area": 1.0,
+                "layout_constraint": 0,
+                "idt": 1
+            },
+            {
+                "nodes": [
+                    2,
+                    3
+                ],
+                "material": 1,
+                "area": 1.0,
+                "layout_constraint": 0,
+                "idt": 2
+            },
+            {
+                "nodes": [
+                    3,
+                    4
+                ],
+                "material": 1,
+                "area": 1.0,
+                "layout_constraint": 0,
+                "idt": 3
+            },
+            {
+                "nodes": [
+                    4,
+                    1
+                ],
+                "material": 1,
+                "area": 1.0,
+                "layout_constraint": 0,
+                "idt": 4
+            },
+            {
+                "nodes": [
+                    5,
+                    4
+                ],
+                "material": 1,
+                "area": 1.0,
+                "layout_constraint": 0,
+                "idt": 5
+            },
+            {
+                "nodes": [
+                    3,
+                    1
+                ],
+                "material": 1,
+                "area": 1.0,
+                "layout_constraint": 0,
+                "idt": 6
+            },
+            {
+                "nodes": [
+                    3,
+                    5
+                ],
+                "material": 1,
+                "area": 1.0,
+                "layout_constraint": 0,
+                "idt": 7
+            },
+            {
+                "nodes": [
+                    6,
+                    4
+                ],
+                "material": 1,
+                "area": 1.0,
+                "layout_constraint": 0,
+                "idt": 8
+            },
+            {
+                "nodes": [
+                    3,
+                    6
+                ],
+                "material": 1,
+                "area": 1.0,
+                "layout_constraint": 1,
+                "idt": 9
+            },
+            {
+                "nodes": [
+                    6,
+                    5
+                ],
+                "material": 1,
+                "area": 1.0,
+                "layout_constraint": 1,
+                "idt": 10
+            },
+            {
+                "nodes": [
+                    2,
+                    4
+                ],
+                "material": 1,
+                "area": 1.0,
+                "layout_constraint": 2,
+                "idt": 11
+            }
+        ],
+        "materials": [
+            {
+                "young": 1.0,
+                "idt": 1
+            }
+        ]
+    }
+}

@@ -3,7 +3,8 @@ from .base_data import BaseData
 
 
 class Node(BaseData):
-    def __init__(self, idt: int, position: list[float], force: list[float], support: list[bool]):
+    def __init__(self, idt: int, position: list[float], force: list[float] | tuple[float] = (0.0, 0.0),
+                 support: list[bool] | tuple[bool] = (False, False)):
         self.idt = idt
         self.position = position
         self.force = force

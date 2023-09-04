@@ -11,6 +11,7 @@ from matplotlib.collections import PatchCollection
 from .save_data import SaveData
 from .compliances import Compliance, ComplianceNominal, ComplianceMu, CompliancePNorm
 
+from matplotlib import cm
 from .optimizer import Optimizer
 from .results import Iteration, ResultIterations, LastIteration
 from .structure import Node, Element, Structure, Material
@@ -35,11 +36,20 @@ class Modeller:
         with open(filename, 'r') as file:
             file_data = json.load(file)
 
+        try:
+            result = ResultIterations.read_dict(file_data)
+        except KeyError:
+            result = None
+
+        try:
+            last_iteration = LastIteration.read_dict(file_data)
+        except KeyError:
+            last_iteration = None
+
         data_to_save = SaveData.read_dict(file_data)
         optimizer = Optimizer.read_dict(file_data)
-        result = ResultIterations.read_dict(file_data)
-        last_iteration = LastIteration.read_dict(file_data)
         structure = Structure.read_dict(file_data['input_structure'])
+
         return cls(filename=filename,
                    data_to_save=data_to_save,
                    structure=structure,
@@ -77,7 +87,8 @@ class Modeller:
         elements = []
         el_id = 1
         for layer in tqdm(layers.keys(), desc='Reading dxf file'):
-            if layer.startswith('elements'):
+            layer_info = layer.split('_')
+            if layer_info[0] == 'elements':
                 for entity in tqdm(layers[layer], desc=f'Reading "{layer}"'):
                     lc_id = 0
                     if (node1 := entity.dxf.start) not in nodes:
@@ -86,13 +97,13 @@ class Modeller:
                     if (node2 := entity.dxf.end) not in nodes:
                         nodes.append(tuple(node2)[:2])
 
-                    if 'lc' in layer:
-                        lc_id = int(layer[-1])
+                    if 'lc' in layer_info:
+                        lc_id = int(layer_info[-1])
 
                     elements.append((el_id, nodes.index(node1) + 1, nodes.index(node2) + 1, lc_id))
                     el_id += 1
 
-            if layer.startswith('nodes'):
+            if layer_info[0] == 'nodes':
                 for entity in layers[layer]:
                     if (node := tuple(entity.dxf.location)[:2]) not in nodes:
                         nodes.append(node)
@@ -124,7 +135,6 @@ class Modeller:
         msp = doc.modelspace()
         doc.layers.add(name='elements_default', dxfattribs={'color': 7})
 
-        color = 1
         for element in self.structure.elements:
             if element.layout_constraint == 0:
                 msp.add_line(element.nodes[0].position, element.nodes[1].position,
@@ -134,19 +144,18 @@ class Modeller:
                 try:
                     doc.layers.get(layer_name)
                 except ValueError:
-                    doc.layers.add(name=layer_name, color=color)
-                    color = color + 1 if color <= 6 else 1
-                msp.add_line(element.nodes[0].position, element.nodes[1].position,
-                             dxfattribs={'layer': layer_name})
+                    doc.layers.add(name=layer_name, color=element.layout_constraint % 6 + 1)
+                msp.add_line(element.nodes[0].position, element.nodes[1].position, dxfattribs={'layer': layer_name})
 
+        node_layers = 0
         for node in self.structure.nodes:
-            if not (node.support == [False, False] and node.force == [0.0, 0.0]):
+            if not (all(s is False for s in node.support) and all(f == 0.0 for f in node.force)):
                 layer_name = f'nodes_{node.force[0]}_{node.force[1]}_{node.support[0]}_{node.support[1]}'
                 try:
                     doc.layers.get(layer_name)
                 except ValueError:
-                    doc.layers.add(name=layer_name, color=color)
-                    color = color + 1 if color <= 6 else 1
+                    node_layers += 1
+                    doc.layers.add(name=layer_name, color=node_layers % 6 + 1)
 
                 msp.add_point(node.position, dxfattribs={'layer': layer_name})
 
