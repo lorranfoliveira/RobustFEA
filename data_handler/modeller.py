@@ -135,6 +135,7 @@ class Modeller:
         msp = doc.modelspace()
         doc.layers.add(name='elements_default', dxfattribs={'color': 7})
 
+        color = 0
         for element in self.structure.elements:
             if element.layout_constraint == 0:
                 msp.add_line(element.nodes[0].position, element.nodes[1].position,
@@ -144,18 +145,18 @@ class Modeller:
                 try:
                     doc.layers.get(layer_name)
                 except ValueError:
-                    doc.layers.add(name=layer_name, color=element.layout_constraint % 6 + 1)
+                    color = element.layout_constraint % 6 + 1
+                    doc.layers.add(name=layer_name, color=color)
                 msp.add_line(element.nodes[0].position, element.nodes[1].position, dxfattribs={'layer': layer_name})
 
-        node_layers = 0
         for node in self.structure.nodes:
             if not (all(s is False for s in node.support) and all(f == 0.0 for f in node.force)):
                 layer_name = f'nodes_{node.force[0]}_{node.force[1]}_{node.support[0]}_{node.support[1]}'
                 try:
                     doc.layers.get(layer_name)
                 except ValueError:
-                    node_layers += 1
-                    doc.layers.add(name=layer_name, color=node_layers % 6 + 1)
+                    color += 1
+                    doc.layers.add(name=layer_name, color=color % 6 + 1)
 
                 msp.add_point(node.position, dxfattribs={'layer': layer_name})
 
@@ -205,54 +206,57 @@ class Modeller:
                 patches.append(PathPatch(path, edgecolor=color, lw=width))
         return patches
 
-    def get_restricted_elements(self) -> np.ndarray:
-        return np.array([element.idt for element in self.structure.elements if element.layout_constraint > 0])
+    def get_restricted_elements(self) -> dict[int, list[int]]:
+        data = {}
+        for element in self.structure.elements:
+            if (lc := element.layout_constraint) > 0:
+                if lc in data:
+                    data[lc].append(element.idt)
+                else:
+                    data[lc] = [element.idt]
+        return dict(sorted(data.items()))
 
-    def plot_dv_analysis(self, other: Modeller,  width: float = 5.0):
-        if (rest_els := self.get_restricted_elements()).size > 0:
+    def plot_dv_analysis(self, other: Modeller, width: float = 5.0):
+        lcs = self.get_restricted_elements()
+
+        if len(lcs) > 0:
             self_areas = np.array(self.last_iteration.iteration.areas)
             other_areas = np.array(other.last_iteration.iteration.areas)
-            max_area = max(self_areas.max(), other_areas.max())
-
-            self_areas = self_areas / max_area
-            other_areas = other_areas / max_area
-
-            self_lc_areas = self_areas[rest_els - 1]
-            other_lc_areas = other_areas[rest_els - 1]
-            max_lc_area = max(self_lc_areas.max(), other_lc_areas.max())
-
-            sort_args = np.argsort(self_lc_areas)
-            sorted_self_lc_areas = self_lc_areas[sort_args]
-            sorted_other_lc_areas = other_lc_areas[sort_args]
+            max_abs_area = max(self_areas.max(), other_areas.max())
+            self_areas = self_areas / max_abs_area
+            other_areas = other_areas / max_abs_area
 
             self_patches = []
             other_patches = []
-            lc_id = 0
-            last_self_area = sorted_self_lc_areas[0]
-            for i in range(len(sorted_self_lc_areas)):
-                if not np.isclose(sorted_self_lc_areas[i], last_self_area):
-                    lc_id += 1
+            max_lc_norm_area = -np.inf
+            i = 0
+            for lc in lcs:
+                for el_id in lcs[lc]:
+                    area_self = self_areas[el_id - 1]
+                    area_other = other_areas[el_id - 1]
 
-                self_path = Path([[i, 0], [i, sorted_self_lc_areas[i]]], [Path.MOVETO, Path.LINETO])
-                other_path = Path([[i, 0], [i, sorted_other_lc_areas[i]]], [Path.MOVETO, Path.LINETO])
+                    max_lc_norm_area = max([max_lc_norm_area, area_self, area_other])
 
-                self_patches.append(PathPatch(self_path, edgecolor=cm.tab10(lc_id % 10), lw=width))
-                other_patches.append(PathPatch(other_path, edgecolor=cm.tab10(lc_id % 10), lw=width))
+                    self_path = Path([[i, 0], [i, area_self]], [Path.MOVETO, Path.LINETO])
+                    other_path = Path([[i, 0], [i, area_other]], [Path.MOVETO, Path.LINETO])
 
-                last_self_area = sorted_self_lc_areas[i]
+                    self_patches.append(PathPatch(self_path, edgecolor=cm.tab20(lc % 20), lw=width))
+                    other_patches.append(PathPatch(other_path, edgecolor=cm.tab20(lc % 20), lw=width))
+                    i += 1
 
+            n_lc_els = sum([len(lcs[lc]) for lc in lcs])
             fig, ax = plt.subplots(2, 1)
 
             ax[0].add_collection(PatchCollection(self_patches, match_original=True))
-            ax[0].set_xlim(0, len(sorted_self_lc_areas))
-            ax[0].set_ylim(0, 1.1 * max_lc_area)
+            ax[0].set_xlim(0, n_lc_els)
+            ax[0].set_ylim(0, 1.1 * max_lc_norm_area)
             ax[0].set_xlabel('Element')
             ax[0].set_ylabel('Normalized area')
             ax[0].set_title(f'Case {self.filename.replace(".json", "").replace("case_", "")}')
 
             ax[1].add_collection(PatchCollection(other_patches, match_original=True))
-            ax[1].set_xlim(0, len(sorted_self_lc_areas))
-            ax[1].set_ylim(0, 1.1 * max_lc_area)
+            ax[1].set_xlim(0, n_lc_els)
+            ax[1].set_ylim(0, 1.1 * max_lc_norm_area)
             ax[1].set_xlabel('Element')
             ax[1].set_ylabel('Normalized area')
             ax[1].set_title(f'Case {other.filename.replace(".json", "").replace("case_", "")}')
@@ -279,7 +283,7 @@ class Modeller:
                 color = 'black'
                 width = default_width
             else:
-                color = cm.tab10(lc % 10)
+                color = cm.tab20(lc % 20)
                 width = lc_width
 
             patches.append(PathPatch(path, edgecolor=color, lw=width))

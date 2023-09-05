@@ -5,7 +5,7 @@ sys.path.append(str(pathlib.Path(__file__).parents[2]))
 
 from data_handler import Modeller
 
-modeller = Modeller.read('case_0.json')
+modeller = Modeller.read('case_2.json')
 
 modeller.save_mat_file()
 
@@ -30,4 +30,4 @@ modeller.plot_initial_structure(default_width=1,
 #                                   forces_markers_width=markers_width,
 #                                   forces_markers_color='magenta')
 
-# modeller.plot_dv_analysis(Modeller.read('case_1.json'), width=1)
+modeller.plot_dv_analysis(Modeller.read('case_1.json'), width=1)
