@@ -26,13 +26,13 @@ optimizer_data = Optimizer(compliance=ComplianceMu(beta=1e-1),
                            x_min=1e-12,
                            tolerance=1e-8)
 
-modeller = Modeller(filename='case_4.json',
+modeller = Modeller(filename='case_0.json',
                     data_to_save=save_data,
                     optimizer=optimizer_data)
 
 material = Material(1, 1.0)
 
-modeller.read_structure_from_dxf(material)
+modeller.read_structure_from_dxf(elements_material=material, elements_area=1e-4)
 
 modeller.write_dxf()
 modeller.write_json()

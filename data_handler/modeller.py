@@ -3,21 +3,21 @@ from __future__ import annotations
 import json
 import matplotlib.pyplot as plt
 from matplotlib.path import Path
-from matplotlib.patches import PathPatch, FancyArrow
+from matplotlib.patches import PathPatch
 import matplotlib.colors as colors
-from matplotlib import cm
 import numpy as np
 from matplotlib.collections import PatchCollection
 from .save_data import SaveData
-from .compliances import Compliance, ComplianceNominal, ComplianceMu, CompliancePNorm
-
 from matplotlib import cm
 from .optimizer import Optimizer
-from .results import Iteration, ResultIterations, LastIteration
+from .results import ResultIterations, LastIteration
 from .structure import Node, Element, Structure, Material
 import ezdxf
 from ezdxf.groupby import groupby
 from tqdm import tqdm
+from scipy.io import savemat
+
+plt.rcParams["font.family"] = "Times New Roman"
 
 
 class Modeller:
@@ -208,47 +208,61 @@ class Modeller:
     def get_restricted_elements(self) -> np.ndarray:
         return np.array([element.idt for element in self.structure.elements if element.layout_constraint > 0])
 
-    def plot_dv_analysis(self, other: Modeller, self_color: str = 'blue', other_color: str = 'red', width: float = 1.0):
-        self_areas = np.array(self.last_iteration.iteration.areas)
-        other_areas = np.array(other.last_iteration.iteration.areas)
-        max_area = max(self_areas.max(), other_areas.max())
-        self_areas = self_areas / max_area
-        other_areas = other_areas / max_area
+    def plot_dv_analysis(self, other: Modeller,  width: float = 5.0):
+        if (rest_els := self.get_restricted_elements()).size > 0:
+            self_areas = np.array(self.last_iteration.iteration.areas)
+            other_areas = np.array(other.last_iteration.iteration.areas)
+            max_area = max(self_areas.max(), other_areas.max())
 
-        self_lc_areas = self_areas[self.get_restricted_elements() - 1]
-        other_lc_areas = other_areas[self.get_restricted_elements() - 1]
-        sort_args = np.argsort(self_lc_areas)
-        sorted_self_lc_areas = self_lc_areas[sort_args]
-        sorted_other_lc_areas = other_lc_areas[sort_args]
+            self_areas = self_areas / max_area
+            other_areas = other_areas / max_area
 
-        self_patches = []
-        other_patches = []
-        for i in range(len(sorted_self_lc_areas)):
-            self_p1 = [i, 0]
-            self_p2 = [i, sorted_self_lc_areas[i]]
-            other_p1 = [i, 0]
-            other_p2 = [i, sorted_other_lc_areas[i]]
+            self_lc_areas = self_areas[rest_els - 1]
+            other_lc_areas = other_areas[rest_els - 1]
+            max_lc_area = max(self_lc_areas.max(), other_lc_areas.max())
 
-            self_path = Path([self_p1, self_p2], [Path.MOVETO, Path.LINETO])
-            other_path = Path([other_p1, other_p2], [Path.MOVETO, Path.LINETO])
+            sort_args = np.argsort(self_lc_areas)
+            sorted_self_lc_areas = self_lc_areas[sort_args]
+            sorted_other_lc_areas = other_lc_areas[sort_args]
 
-            self_patches.append(PathPatch(self_path, edgecolor=self_color, lw=width))
-            other_patches.append(PathPatch(other_path, edgecolor=other_color, lw=width))
+            self_patches = []
+            other_patches = []
+            lc_id = 0
+            last_self_area = sorted_self_lc_areas[0]
+            for i in range(len(sorted_self_lc_areas)):
+                if not np.isclose(sorted_self_lc_areas[i], last_self_area):
+                    lc_id += 1
 
-        fig, ax = plt.subplots(2, 1)
-        ax[0].add_collection(PatchCollection(self_patches, match_original=True))
-        ax[0].set_aspect('equal')
-        ax[0].set_xlim(0, len(sorted_self_lc_areas))
-        ax[0].set_ylim(0, 1.1)
-        ax[0].set_title(f'Self - {self.filename.replace(".json", "")}')
+                self_path = Path([[i, 0], [i, sorted_self_lc_areas[i]]], [Path.MOVETO, Path.LINETO])
+                other_path = Path([[i, 0], [i, sorted_other_lc_areas[i]]], [Path.MOVETO, Path.LINETO])
 
-        ax[1].add_collection(PatchCollection(other_patches, match_original=True))
-        ax[1].set_aspect('equal')
-        ax[1].set_xlim(0, len(sorted_self_lc_areas))
-        ax[1].set_ylim(0, 1.1)
-        ax[1].set_title(f'Other - {other.filename.replace(".json", "")}')
+                self_patches.append(PathPatch(self_path, edgecolor=cm.tab10(lc_id % 10), lw=width))
+                other_patches.append(PathPatch(other_path, edgecolor=cm.tab10(lc_id % 10), lw=width))
 
-        plt.show()
+                last_self_area = sorted_self_lc_areas[i]
+
+            fig, ax = plt.subplots(2, 1)
+
+            ax[0].add_collection(PatchCollection(self_patches, match_original=True))
+            ax[0].set_xlim(0, len(sorted_self_lc_areas))
+            ax[0].set_ylim(0, 1.1 * max_lc_area)
+            ax[0].set_xlabel('Element')
+            ax[0].set_ylabel('Normalized area')
+            ax[0].set_title(f'Case {self.filename.replace(".json", "").replace("case_", "")}')
+
+            ax[1].add_collection(PatchCollection(other_patches, match_original=True))
+            ax[1].set_xlim(0, len(sorted_self_lc_areas))
+            ax[1].set_ylim(0, 1.1 * max_lc_area)
+            ax[1].set_xlabel('Element')
+            ax[1].set_ylabel('Normalized area')
+            ax[1].set_title(f'Case {other.filename.replace(".json", "").replace("case_", "")}')
+
+            fig.suptitle(f'Areas analysis: {self.filename.replace(".json", "")}  '
+                         f'({other.filename.replace(".json", "")} as reference)')
+            fig.tight_layout()
+            plt.show()
+        else:
+            raise ValueError('No layout constraints found')
 
     def plot_initial_structure(self, default_width: float, lc_width: float, supports_markers_width: float,
                                supports_markers_size: float, forces_markers_width: float, forces_markers_size: float,
@@ -265,7 +279,7 @@ class Modeller:
                 color = 'black'
                 width = default_width
             else:
-                color = cm.tab20(lc % 20)
+                color = cm.tab10(lc % 10)
                 width = lc_width
 
             patches.append(PathPatch(path, edgecolor=color, lw=width))
@@ -316,3 +330,32 @@ class Modeller:
         ax.set_ylim(self.y_limits())
         plt.title(f'Optimized structure - {self.filename.replace(".json", "")}')
         plt.show()
+
+    def save_mat_file(self):
+        data = {'fem': {'NNode': len(self.structure.nodes),
+                        'NElem': len(self.structure.elements),
+                        'Vol': self.optimizer.volume_max}}
+
+        for node in self.structure.nodes:
+            node_dict = {'cg': node.force,
+                         'sup': [int(s) for s in node.support],
+                         'x': node.position[0],
+                         'y': node.position[1]}
+
+            if 'Node' in data['fem']:
+                data['fem']['Node'].append(node_dict)
+            else:
+                data['fem']['Node'] = [node_dict]
+
+        for element in self.structure.elements:
+            element_dict = {'nodes': [el.idt for el in element.nodes],
+                            'E': element.area,
+                            'A': element.nodes[0].idt,
+                            'L': element.length()}
+
+            if 'Element' in data['fem']:
+                data['fem']['Element'].append(element_dict)
+            else:
+                data['fem']['Element'] = [element_dict]
+
+        savemat(f'{self.filename.replace(".json", ".mat")}', data)

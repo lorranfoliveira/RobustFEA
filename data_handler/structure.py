@@ -1,5 +1,6 @@
 from __future__ import annotations
 from .base_data import BaseData
+import numpy as np
 
 
 class Node(BaseData):
@@ -52,6 +53,9 @@ class Element(BaseData):
     def __repr__(self):
         return (f'Element(idt={self.idt}, nodes={[self.nodes[0].idt, self.nodes[1].idt]}, '
                 f'material={self.material.idt}, area={self.area}, layout_constraint={self.layout_constraint})')
+
+    def length(self)->float:
+        return  np.linalg.norm(np.array(self.nodes[0].position) - np.array(self.nodes[1].position))
 
     @classmethod
     def read_dict(cls, dct: dict) -> Element:
