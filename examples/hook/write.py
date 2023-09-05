@@ -1,7 +1,7 @@
 import sys
 import pathlib
 
-sys.path.append(str(pathlib.Path(__file__).parents[3]))
+sys.path.append(str(pathlib.Path(__file__).parents[2]))
 
 from data_handler import Modeller, SaveData, Optimizer, ComplianceMu, Material
 
@@ -26,7 +26,7 @@ optimizer_data = Optimizer(compliance=ComplianceMu(beta=1e-1),
                            x_min=1e-12,
                            tolerance=1e-8)
 
-modeller = Modeller(filename='case_2.json',
+modeller = Modeller(filename='case_4.json',
                     data_to_save=save_data,
                     optimizer=optimizer_data)
 

@@ -205,6 +205,51 @@ class Modeller:
                 patches.append(PathPatch(path, edgecolor=color, lw=width))
         return patches
 
+    def get_restricted_elements(self) -> np.ndarray:
+        return np.array([element.idt for element in self.structure.elements if element.layout_constraint > 0])
+
+    def plot_dv_analysis(self, other: Modeller, self_color: str = 'blue', other_color: str = 'red', width: float = 1.0):
+        self_areas = np.array(self.last_iteration.iteration.areas)
+        other_areas = np.array(other.last_iteration.iteration.areas)
+        max_area = max(self_areas.max(), other_areas.max())
+        self_areas = self_areas / max_area
+        other_areas = other_areas / max_area
+
+        self_lc_areas = self_areas[self.get_restricted_elements() - 1]
+        other_lc_areas = other_areas[self.get_restricted_elements() - 1]
+        sort_args = np.argsort(self_lc_areas)
+        sorted_self_lc_areas = self_lc_areas[sort_args]
+        sorted_other_lc_areas = other_lc_areas[sort_args]
+
+        self_patches = []
+        other_patches = []
+        for i in range(len(sorted_self_lc_areas)):
+            self_p1 = [i, 0]
+            self_p2 = [i, sorted_self_lc_areas[i]]
+            other_p1 = [i, 0]
+            other_p2 = [i, sorted_other_lc_areas[i]]
+
+            self_path = Path([self_p1, self_p2], [Path.MOVETO, Path.LINETO])
+            other_path = Path([other_p1, other_p2], [Path.MOVETO, Path.LINETO])
+
+            self_patches.append(PathPatch(self_path, edgecolor=self_color, lw=width))
+            other_patches.append(PathPatch(other_path, edgecolor=other_color, lw=width))
+
+        fig, ax = plt.subplots(2, 1)
+        ax[0].add_collection(PatchCollection(self_patches, match_original=True))
+        ax[0].set_aspect('equal')
+        ax[0].set_xlim(0, len(sorted_self_lc_areas))
+        ax[0].set_ylim(0, 1.1)
+        ax[0].set_title(f'Self - {self.filename.replace(".json", "")}')
+
+        ax[1].add_collection(PatchCollection(other_patches, match_original=True))
+        ax[1].set_aspect('equal')
+        ax[1].set_xlim(0, len(sorted_self_lc_areas))
+        ax[1].set_ylim(0, 1.1)
+        ax[1].set_title(f'Other - {other.filename.replace(".json", "")}')
+
+        plt.show()
+
     def plot_initial_structure(self, default_width: float, lc_width: float, supports_markers_width: float,
                                supports_markers_size: float, forces_markers_width: float, forces_markers_size: float,
                                plot_supports: bool = True, plot_loads: bool = True,

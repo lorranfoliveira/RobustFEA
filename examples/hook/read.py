@@ -1,11 +1,11 @@
 import sys
 import pathlib
 
-sys.path.append(str(pathlib.Path(__file__).parents[3]))
+sys.path.append(str(pathlib.Path(__file__).parents[2]))
 
 from data_handler import Modeller
 
-modeller = Modeller.read('case_0.json')
+modeller = Modeller.read('case_4.json')
 
 markers_sizes = 0.7
 markers_width = 3
@@ -27,3 +27,5 @@ modeller.plot_optimized_structure(cutoff=1e-4,
                                   forces_markers_size=markers_sizes,
                                   forces_markers_width=markers_width,
                                   forces_markers_color='magenta')
+
+modeller.plot_dv_analysis(Modeller.read('case_1.json'))
