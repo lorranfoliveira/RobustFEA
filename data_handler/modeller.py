@@ -17,8 +17,18 @@ from ezdxf.groupby import groupby
 from tqdm import tqdm
 from scipy.io import savemat
 
+# FONT_SMALL_SIZE = 12
+# FONT_MEDIUM_SIZE = 17
+# FONT_BIG_SIZE = 20
+#
 plt.rcParams["font.family"] = "Times New Roman"
-
+# plt.rc('font', size=FONT_SMALL_SIZE)          # controls default text sizes
+# plt.rc('axes', titlesize=FONT_SMALL_SIZE)     # fontsize of the axes title
+# plt.rc('axes', labelsize=FONT_MEDIUM_SIZE)    # fontsize of the x and y labels
+# plt.rc('xtick', labelsize=FONT_SMALL_SIZE)    # fontsize of the tick labels
+# plt.rc('ytick', labelsize=FONT_SMALL_SIZE)    # fontsize of the tick labels
+# plt.rc('legend', fontsize=FONT_SMALL_SIZE)    # legend fontsize
+# plt.rc('figure', titlesize=FONT_BIG_SIZE)  # fontsize of the figure title
 
 class Modeller:
     def __init__(self, filename: str, data_to_save: SaveData, optimizer: Optimizer,
@@ -173,7 +183,7 @@ class Modeller:
         return y_min - 0.1 * (y_max - y_min), y_max + 0.1 * (y_max - y_min)
 
     def last_iteration_norm_areas(self) -> np.ndarray:
-        areas = np.array(self.last_iteration.iteration.areas)
+        areas = np.sqrt(np.array(self.last_iteration.iteration.areas))
         return areas / areas.max()
 
     def get_support_markers(self, size: float, width: float, color: str) -> list[PathPatch]:
@@ -252,17 +262,17 @@ class Modeller:
             ax[0].set_ylim(0, 1.1 * max_lc_norm_area)
             ax[0].set_xlabel('Element')
             ax[0].set_ylabel('Normalized area')
-            ax[0].set_title(f'Case {self.filename.replace(".json", "").replace("case_", "")}')
+            ax[0].set_title(f'Case {self.filename.split("_")[-1].replace(".json", "")}')
 
             ax[1].add_collection(PatchCollection(other_patches, match_original=True))
             ax[1].set_xlim(0, n_lc_els)
             ax[1].set_ylim(0, 1.1 * max_lc_norm_area)
             ax[1].set_xlabel('Element')
             ax[1].set_ylabel('Normalized area')
-            ax[1].set_title(f'Case {other.filename.replace(".json", "").replace("case_", "")}')
+            ax[1].set_title(f'Case {other.filename.split("_")[-1].replace(".json", "")}')
 
-            fig.suptitle(f'Areas analysis: {self.filename.replace(".json", "")}  '
-                         f'({other.filename.replace(".json", "")} as reference)')
+            # fig.suptitle(f'Areas analysis: {self.filename.replace(".json", "")}  '
+            #              f'({other.filename.replace(".json", "")} as reference)')
             fig.tight_layout()
             plt.show()
         else:
@@ -301,7 +311,7 @@ class Modeller:
         ax.axis('off')
         ax.set_xlim(self.x_limits())
         ax.set_ylim(self.y_limits())
-        plt.title(f'Initial structure - {self.filename.replace(".json", "")}')
+        # plt.title(f'Initial structure - {self.filename.replace(".json", "")}')
         plt.show()
 
     def plot_optimized_structure(self, base_width: float = 1.0, cutoff: float = 1e-4, plot_supports: bool = True,
@@ -332,14 +342,16 @@ class Modeller:
         ax.axis('off')
         ax.set_xlim(self.x_limits())
         ax.set_ylim(self.y_limits())
-        plt.title(f'Optimized structure - {self.filename.replace(".json", "")}')
-        plt.colorbar(plt.cm.ScalarMappable(cmap=colormap), ax=ax)
+        # plt.title(f'Optimized structure - {self.filename.replace(".json", "")}')
+        plt.colorbar(plt.cm.ScalarMappable(cmap=colormap), ax=ax, shrink=0.5)
         plt.show()
 
     def plot_compliance(self):
         compliance = np.array([iteration.compliance for iteration in self.result_iterations.iterations])
         plt.plot(compliance)
-        plt.title(f'Compliance - {self.filename.replace(".json", "")}')
+        plt.xlabel('Iteration')
+        plt.ylabel('Compliance')
+        # plt.title(f'Compliance - {self.filename.replace(".json", "")}')
         plt.show()
 
     def save_mat_file(self):
