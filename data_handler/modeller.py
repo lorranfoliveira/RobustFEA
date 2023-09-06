@@ -333,6 +333,13 @@ class Modeller:
         ax.set_xlim(self.x_limits())
         ax.set_ylim(self.y_limits())
         plt.title(f'Optimized structure - {self.filename.replace(".json", "")}')
+        plt.colorbar(plt.cm.ScalarMappable(cmap=colormap), ax=ax)
+        plt.show()
+
+    def plot_compliance(self):
+        compliance = np.array([iteration.compliance for iteration in self.result_iterations.iterations])
+        plt.plot(compliance)
+        plt.title(f'Compliance - {self.filename.replace(".json", "")}')
         plt.show()
 
     def save_mat_file(self):
