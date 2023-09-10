@@ -4,7 +4,6 @@ from data_handler import Modeller, SaveData, Optimizer, ComplianceMu, Material
 # ================================ Defining case ================================
 case = 4
 only_read = True
-use_layout_constraint = True
 case_ref = 1  # DO NOT CHANGE THIS
 
 # ================================ Create json file ================================
@@ -26,7 +25,7 @@ if not only_read:
                                initial_move_multiplier=1.0,
                                use_adaptive_damping=False,
                                initial_damping=0.7,
-                               use_layout_constraint=use_layout_constraint,
+                               use_layout_constraint=False if case == 0 else True,
                                x_min=1e-12,
                                tolerance=1e-8)
 
@@ -50,28 +49,28 @@ markers_width = 3
 
 modeller = Modeller.read(f'examples/hook/case_{case}.json')
 
-modeller.plot_initial_structure(default_width=0.5,
-                                lc_width=3,
-                                supports_markers_size=markers_sizes,
-                                supports_markers_width=markers_width,
-                                supports_markers_color='green',
-                                forces_markers_size=markers_sizes,
-                                forces_markers_width=markers_width,
-                                forces_markers_color='magenta',
-                                plot_loads=True,
-                                plot_supports=True)
-
-modeller.plot_optimized_structure(cutoff=1e-4,
-                                  base_width=7,
-                                  supports_markers_size=markers_sizes,
-                                  supports_markers_width=markers_width,
-                                  supports_markers_color='green',
-                                  forces_markers_size=markers_sizes,
-                                  forces_markers_width=markers_width,
-                                  forces_markers_color='magenta',
-                                  plot_loads=False,
-                                  plot_supports=False)
-
-modeller.plot_compliance()
+# modeller.plot_initial_structure(default_width=0.5,
+#                                 lc_width=3,
+#                                 supports_markers_size=markers_sizes,
+#                                 supports_markers_width=markers_width,
+#                                 supports_markers_color='green',
+#                                 forces_markers_size=markers_sizes,
+#                                 forces_markers_width=markers_width,
+#                                 forces_markers_color='magenta',
+#                                 plot_loads=False,
+#                                 plot_supports=False)
+#
+# modeller.plot_optimized_structure(cutoff=1e-4,
+#                                   base_width=7,
+#                                   supports_markers_size=markers_sizes,
+#                                   supports_markers_width=markers_width,
+#                                   supports_markers_color='green',
+#                                   forces_markers_size=markers_sizes,
+#                                   forces_markers_width=markers_width,
+#                                   forces_markers_color='magenta',
+#                                   plot_loads=False,
+#                                   plot_supports=False)
+#
 
 modeller.plot_dv_analysis(Modeller.read(f'examples/hook/case_{case_ref}.json'), width=1.1)
+# modeller.plot_dv_one_case(width=1.1)

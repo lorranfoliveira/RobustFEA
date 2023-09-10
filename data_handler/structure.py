@@ -54,8 +54,15 @@ class Element(BaseData):
         return (f'Element(idt={self.idt}, nodes={[self.nodes[0].idt, self.nodes[1].idt]}, '
                 f'material={self.material.idt}, area={self.area}, layout_constraint={self.layout_constraint})')
 
-    def length(self)->float:
-        return  np.linalg.norm(np.array(self.nodes[0].position) - np.array(self.nodes[1].position))
+    def is_the_same(self, other: Element) -> bool:
+        return (np.isclose(self.length(), other.length()) and (
+                np.isclose(self.nodes[0].position[0], other.nodes[0].position[0]) and np.isclose(
+            self.nodes[0].position[1], other.nodes[0].position[1])) and
+                (np.isclose(self.nodes[1].position[0], other.nodes[1].position[0]) and
+                 np.isclose(self.nodes[1].position[1], other.nodes[1].position[1])))
+
+    def length(self) -> float:
+        return np.linalg.norm(np.array(self.nodes[0].position) - np.array(self.nodes[1].position))
 
     @classmethod
     def read_dict(cls, dct: dict) -> Element:
