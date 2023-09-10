@@ -22,6 +22,13 @@ from scipy.io import savemat
 # FONT_BIG_SIZE = 20
 #
 plt.rcParams["font.family"] = "Times New Roman"
+plt.rcParams['axes.labelsize'] = 13
+plt.rcParams['axes.titlesize'] = 15
+plt.rcParams['xtick.labelsize'] = 13
+plt.rcParams['ytick.labelsize'] = 13
+plt.rcParams['legend.fontsize'] = 15
+
+
 # plt.rc('font', size=FONT_SMALL_SIZE)          # controls default text sizes
 # plt.rc('axes', titlesize=FONT_SMALL_SIZE)     # fontsize of the axes title
 # plt.rc('axes', labelsize=FONT_MEDIUM_SIZE)    # fontsize of the x and y labels
@@ -138,6 +145,12 @@ class Modeller:
                                               material=elements_material, area=elements_area,
                                               layout_constraint=element[3]))
 
+        # Sort elements by length
+        elements_structure.sort(key=lambda x: x.length())
+        # update elements idt
+        for i, element in enumerate(elements_structure):
+            element.idt = i + 1
+
         self.structure = Structure(nodes=nodes_structure, elements=elements_structure, materials=[elements_material])
 
     def write_dxf(self):
@@ -183,7 +196,7 @@ class Modeller:
         return y_min - 0.1 * (y_max - y_min), y_max + 0.1 * (y_max - y_min)
 
     def last_iteration_norm_areas(self) -> np.ndarray:
-        areas = np.sqrt(np.array(self.last_iteration.iteration.areas))
+        areas = np.array(self.last_iteration.iteration.areas)
         return areas / areas.max()
 
     def get_support_markers(self, size: float, width: float, color: str) -> list[PathPatch]:
@@ -230,49 +243,88 @@ class Modeller:
         lcs = self.get_restricted_elements()
 
         if len(lcs) > 0:
-            self_areas = np.array(self.last_iteration.iteration.areas)
-            other_areas = np.array(other.last_iteration.iteration.areas)
-            max_abs_area = max(self_areas.max(), other_areas.max())
-            self_areas = self_areas / max_abs_area
-            other_areas = other_areas / max_abs_area
+            self_areas = self.last_iteration_norm_areas()
+            other_areas = other.last_iteration_norm_areas()
+
+            self_used_areas = []
+            other_used_areas = []
 
             self_patches = []
             other_patches = []
-            max_lc_norm_area = -np.inf
             i = 0
             for lc in lcs:
                 for el_id in lcs[lc]:
-                    area_self = self_areas[el_id - 1]
-                    area_other = other_areas[el_id - 1]
+                    self_path = Path([[i, 0], [i, self_areas[el_id - 1]]], [Path.MOVETO, Path.LINETO])
+                    self_used_areas.append(self_areas[el_id - 1])
 
-                    max_lc_norm_area = max([max_lc_norm_area, area_self, area_other])
-
-                    self_path = Path([[i, 0], [i, area_self]], [Path.MOVETO, Path.LINETO])
-                    other_path = Path([[i, 0], [i, area_other]], [Path.MOVETO, Path.LINETO])
+                    other_path = Path([[i, 0], [i, other_areas[el_id - 1]]], [Path.MOVETO, Path.LINETO])
+                    other_used_areas.append(other_areas[el_id - 1])
 
                     self_patches.append(PathPatch(self_path, edgecolor=cm.tab20(lc % 20), lw=width))
                     other_patches.append(PathPatch(other_path, edgecolor=cm.tab20(lc % 20), lw=width))
                     i += 1
 
+            self_used_areas = np.array(self_used_areas)
+            other_used_areas = np.array(other_used_areas)
             n_lc_els = sum([len(lcs[lc]) for lc in lcs])
             fig, ax = plt.subplots(2, 1)
 
-            ax[0].add_collection(PatchCollection(self_patches, match_original=True))
-            ax[0].set_xlim(0, n_lc_els)
-            ax[0].set_ylim(0, 1.1 * max_lc_norm_area)
-            ax[0].set_xlabel('Element')
+            ax[0].add_collection(PatchCollection(other_patches, match_original=True))
+            ax[0].set_xlim(1, n_lc_els)
+            ax[0].set_ylim(0, 1.3 * other_used_areas.max())
+            # ax[0].set_xticklabels([])
+            # ax[0].set_xticks([])
             ax[0].set_ylabel('Normalized area')
-            ax[0].set_title(f'Case {self.filename.split("_")[-1].replace(".json", "")}')
+            # ax[0].set_title(f'(b) Distribution of bars areas without LCs in Case {other.filename.split("_")[-1].replace(".json", "")}')
+            ax[0].set_xlabel(f'Element number')
+            ax[0].set_title(f'Distribution of areas without LC')
 
-            ax[1].add_collection(PatchCollection(other_patches, match_original=True))
-            ax[1].set_xlim(0, n_lc_els)
-            ax[1].set_ylim(0, 1.1 * max_lc_norm_area)
-            ax[1].set_xlabel('Element')
+            ax[1].add_collection(PatchCollection(self_patches, match_original=True))
+            ax[1].set_xlim(1, n_lc_els)
+            ax[1].set_ylim(0, 1.3 * self_used_areas.max())
+            # ax[1].set_xticklabels([])
+            # ax[1].set_xticks([])
             ax[1].set_ylabel('Normalized area')
-            ax[1].set_title(f'Case {other.filename.split("_")[-1].replace(".json", "")}')
+            ax[1].set_title(f'Distribution of areas with LC')
+            # ax[1].set_title(f'(a) Distribution of bars areas with LCs in Case {self.filename.split("_")[-1].replace(".json", "")}')
+            ax[1].set_xlabel(f'Element number')
 
-            # fig.suptitle(f'Areas analysis: {self.filename.replace(".json", "")}  '
-            #              f'({other.filename.replace(".json", "")} as reference)')
+            fig.tight_layout()
+            plt.show()
+        else:
+            raise ValueError('No layout constraints found')
+
+    def plot_dv_one_case(self, width: float = 5.0):
+        lcs = self.get_restricted_elements()
+        max_area = -np.inf
+
+        if len(lcs) > 0:
+            self_areas = self.last_iteration_norm_areas()
+
+            patches = []
+            i = 0
+            for lc in lcs:
+                for el_id in lcs[lc]:
+                    area_self = self_areas[el_id - 1]
+                    if area_self > max_area:
+                        max_area = area_self
+
+                    self_path = Path([[i, 0], [i, area_self]], [Path.MOVETO, Path.LINETO])
+
+                    patches.append(PathPatch(self_path, edgecolor=cm.tab20(lc % 20), lw=width))
+                    i += 1
+
+            n_lc_els = sum([len(lcs[lc]) for lc in lcs])
+            fig, ax = plt.subplots()
+
+            ax.add_collection(PatchCollection(patches, match_original=True))
+            ax.set_xlim(0, n_lc_els)
+            ax.set_ylim(0, 1.3 * max_area)
+            ax.set_xticklabels([])
+            ax.set_xticks([])
+            ax.set_ylabel('Normalized area')
+            ax.set_title(f'Case {self.filename.split("_")[-1].replace(".json", "")}')
+
             fig.tight_layout()
             plt.show()
         else:
@@ -321,7 +373,7 @@ class Modeller:
                                  forces_markers_color: str = 'magenta'):
         colormap = colors.ListedColormap(plt.cm.jet(np.linspace(0, 1, 10)))
         patches = []
-        areas = self.last_iteration_norm_areas()
+        areas = np.sqrt(np.array(self.last_iteration.iteration.areas) / self.optimizer.volume_max)
         for i, element in enumerate(self.structure.elements):
             if areas[i] > cutoff:
                 p1 = element.nodes[0].position
@@ -382,3 +434,11 @@ class Modeller:
                 data['fem']['Element'] = [element_dict]
 
         savemat(f'{self.filename.replace(".json", ".mat")}', data)
+
+    def plot_area_histogram(self, n):
+        areas = np.array([area for area in np.array(self.last_iteration_norm_areas()) if area > 1e-4])
+        plt.hist(areas, bins=n)
+        plt.xlabel('Area')
+        plt.ylabel('Frequency')
+        plt.title(f'Area histogram - std: {areas.std():.3f} - mean: {areas.mean():.3f}')
+        plt.show()
