@@ -3,7 +3,11 @@ from data_handler import Modeller, SaveData, Optimizer, ComplianceMu, Material
 
 # ================================ Defining case ================================
 case = 4
+<<<<<<< HEAD
 only_read = False
+=======
+only_read = True
+>>>>>>> 0db2847109cf6e6eb66aeacb843ecaf13e9cdc2c
 case_ref = 1  # DO NOT CHANGE THIS
 
 # ================================ Create json file ================================
@@ -72,5 +76,9 @@ modeller = Modeller.read(f'examples/hook/case_{case}.json')
 #                                   plot_supports=False)
 #
 
+<<<<<<< HEAD
 # modeller.plot_dv_analysis(Modeller.read(f'examples/hook/case_{case_ref}.json'), width=1.1)
+=======
+modeller.plot_dv_analysis(Modeller.read(f'examples/hook/case_{case_ref}.json'), width=1.1)
+>>>>>>> 0db2847109cf6e6eb66aeacb843ecaf13e9cdc2c
 # modeller.plot_dv_one_case(width=1.1)

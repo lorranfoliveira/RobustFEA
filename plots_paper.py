@@ -9,6 +9,14 @@ plt.rcParams['xtick.labelsize'] = 15
 plt.rcParams['ytick.labelsize'] = 17
 plt.rcParams['legend.fontsize'] = 15
 
+<<<<<<< HEAD
+=======
+case_1 = Modeller.read(f'examples/hook/case_1.json')
+case_2 = Modeller.read(f'examples/hook/case_2.json')
+case_3 = Modeller.read(f'examples/hook/case_3.json')
+case_4 = Modeller.read(f'examples/hook/case_4.json')
+
+>>>>>>> 0db2847109cf6e6eb66aeacb843ecaf13e9cdc2c
 
 def plot_histogram(*cases):
     fig, ax = plt.subplots()
@@ -55,7 +63,10 @@ def plot_lc_by_bars_number(*cases):
     fig.tight_layout()
     plt.show()
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 0db2847109cf6e6eb66aeacb843ecaf13e9cdc2c
 def plot_number_of_restricted_bars(*cases):
     fig, ax = plt.subplots()
 
@@ -72,8 +83,14 @@ def plot_number_of_restricted_bars(*cases):
     points = np.array(points)
 
     # Points
+<<<<<<< HEAD
     ax.plot(points[:, 0], points[:, 1], '-o', markersize=10, linewidth=1.7, color=plt.cm.tab20c(1),
             markerfacecolor=plt.cm.tab20(0))
+=======
+    ax.vlines(points[:, 0], 0, points[:, 1], color=plt.cm.tab20c(1), linewidth=1, linestyle='--')
+    ax.hlines(points[:, 1], 0, points[:, 0], color=plt.cm.tab20c(1), linewidth=1, linestyle='--')
+    ax.plot(points[:, 0], points[:, 1], '-o', markersize=10, linewidth=1.7, color=plt.cm.tab20c(1), markerfacecolor=plt.cm.tab20(0))
+>>>>>>> 0db2847109cf6e6eb66aeacb843ecaf13e9cdc2c
     ax.set_ylabel('Number of restricted elements')
     ax.set_xticks(points[:, 0].astype(int), [f'Case {i}' for i in points[:, 0].astype(int)])
     ax.set_yticks(points[:, 1])
@@ -82,6 +99,7 @@ def plot_number_of_restricted_bars(*cases):
 
     plt.show()
 
+<<<<<<< HEAD
 
 def plot_compliances(*cases):
     fig, ax1 = plt.subplots()
@@ -123,6 +141,8 @@ def plot_compliances(*cases):
     plt.show()
 
 
+=======
+>>>>>>> 0db2847109cf6e6eb66aeacb843ecaf13e9cdc2c
 def plot_number_of_lcs(*cases):
     fig, ax = plt.subplots()
 
@@ -140,8 +160,12 @@ def plot_number_of_lcs(*cases):
     # Points
     ax.vlines(points[:, 0], 0, points[:, 1], color=plt.cm.tab20c(5), linewidth=1, linestyle='--')
     ax.hlines(points[:, 1], 0, points[:, 0], color=plt.cm.tab20c(5), linewidth=1, linestyle='--')
+<<<<<<< HEAD
     ax.plot(points[:, 0], points[:, 1], '-o', markersize=10, linewidth=1.7, color=plt.cm.tab20c(5),
             markerfacecolor=plt.cm.tab20c(4))
+=======
+    ax.plot(points[:, 0], points[:, 1], '-o', markersize=10, linewidth=1.7, color=plt.cm.tab20c(5), markerfacecolor=plt.cm.tab20c(4))
+>>>>>>> 0db2847109cf6e6eb66aeacb843ecaf13e9cdc2c
     ax.set_ylabel('Number of layout constraints')
     ax.set_xticks(points[:, 0].astype(int), [f'Case {i}' for i in points[:, 0].astype(int)])
     ax.set_yticks(points[:, 1])
@@ -150,6 +174,7 @@ def plot_number_of_lcs(*cases):
 
     plt.show()
 
+<<<<<<< HEAD
 
 cases = [Modeller.read(f'examples/hook/case_{i + 1}.json') for i in range(4)]
 # plot_number_of_lcs(*cases)
@@ -157,4 +182,17 @@ cases = [Modeller.read(f'examples/hook/case_{i + 1}.json') for i in range(4)]
 plot_compliances(*cases)
 # save_means_and_sdts(*cases)
 # plot_histogram(*cases)
+=======
+def save_means_and_sdts(*cases):
+    with open('means_and_sdts.txt', 'w') as f:
+        for i, case in enumerate(cases):
+            used_areas = [a for a in case.last_iteration_norm_areas() if a > 1e-4]
+            f.write(f'Case {i + 1}: mean = {np.mean(used_areas)}, std = {np.std(used_areas)}\n')
+
+cases = [case_1, case_2, case_3, case_4]
+plot_number_of_lcs(*cases)
+plot_number_of_restricted_bars(*cases)
+save_means_and_sdts(*cases)
+plot_histogram(*cases)
+>>>>>>> 0db2847109cf6e6eb66aeacb843ecaf13e9cdc2c
 # plot_lc_by_bars_number(case_1, case_2, case_3, case_4)

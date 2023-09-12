@@ -22,10 +22,17 @@ from scipy.io import savemat
 # FONT_BIG_SIZE = 20
 #
 plt.rcParams["font.family"] = "Times New Roman"
+<<<<<<< HEAD
 plt.rcParams['axes.labelsize'] = 13
 plt.rcParams['axes.titlesize'] = 15
 plt.rcParams['xtick.labelsize'] = 13
 plt.rcParams['ytick.labelsize'] = 13
+=======
+plt.rcParams['axes.labelsize'] = 15
+plt.rcParams['axes.titlesize'] = 15
+plt.rcParams['xtick.labelsize'] = 15
+plt.rcParams['ytick.labelsize'] = 15
+>>>>>>> 0db2847109cf6e6eb66aeacb843ecaf13e9cdc2c
 plt.rcParams['legend.fontsize'] = 15
 
 
@@ -269,6 +276,7 @@ class Modeller:
             n_lc_els = sum([len(lcs[lc]) for lc in lcs])
             fig, ax = plt.subplots(2, 1)
 
+<<<<<<< HEAD
             ax[0].add_collection(PatchCollection(other_patches, match_original=True))
             ax[0].set_xlim(1, n_lc_els)
             ax[0].set_ylim(0, 1.3 * other_used_areas.max())
@@ -288,6 +296,59 @@ class Modeller:
             ax[1].set_title(f'Distribution of areas with LC')
             # ax[1].set_title(f'(a) Distribution of bars areas with LCs in Case {self.filename.split("_")[-1].replace(".json", "")}')
             ax[1].set_xlabel(f'Element number')
+
+            fig.tight_layout()
+            plt.show()
+        else:
+            raise ValueError('No layout constraints found')
+
+    def plot_dv_one_case(self, width: float = 5.0):
+        lcs = self.get_restricted_elements()
+        max_area = -np.inf
+
+        if len(lcs) > 0:
+            self_areas = self.last_iteration_norm_areas()
+
+            patches = []
+            i = 0
+            for lc in lcs:
+                for el_id in lcs[lc]:
+                    area_self = self_areas[el_id - 1]
+                    if area_self > max_area:
+                        max_area = area_self
+
+                    self_path = Path([[i, 0], [i, area_self]], [Path.MOVETO, Path.LINETO])
+
+                    patches.append(PathPatch(self_path, edgecolor=cm.tab20(lc % 20), lw=width))
+                    i += 1
+
+            n_lc_els = sum([len(lcs[lc]) for lc in lcs])
+            fig, ax = plt.subplots()
+
+            ax.add_collection(PatchCollection(patches, match_original=True))
+            ax.set_xlim(0, n_lc_els)
+            ax.set_ylim(0, 1.3 * max_area)
+            ax.set_xticklabels([])
+            ax.set_xticks([])
+            ax.set_ylabel('Normalized area')
+            ax.set_title(f'Case {self.filename.split("_")[-1].replace(".json", "")}')
+=======
+            ax[0].add_collection(PatchCollection(self_patches, match_original=True))
+            ax[0].set_xlim(0, n_lc_els)
+            ax[0].set_ylim(0, 1.3 * self_used_areas.max())
+            ax[0].set_xticklabels([])
+            ax[0].set_xticks([])
+            ax[0].set_ylabel('Normalized area')
+            ax[0].set_title(f'Case {self.filename.split("_")[-1].replace(".json", "")} - areas distribution')
+
+            ax[1].add_collection(PatchCollection(other_patches, match_original=True))
+            ax[1].set_xlim(0, n_lc_els)
+            ax[1].set_ylim(0, 1.3 * other_used_areas.max())
+            ax[1].set_xticklabels([])
+            ax[1].set_xticks([])
+            ax[1].set_ylabel('Normalized area')
+            ax[1].set_title(f'Case {other.filename.split("_")[-1].replace(".json", "")} - areas distribution')
+>>>>>>> 0db2847109cf6e6eb66aeacb843ecaf13e9cdc2c
 
             fig.tight_layout()
             plt.show()
