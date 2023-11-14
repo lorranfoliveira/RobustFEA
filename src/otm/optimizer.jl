@@ -241,7 +241,7 @@ function update_move!(opt::Optimizer)
 end
 
 function update_damping!(opt::Optimizer)
-    if opt.iter % 1 == 0
+    if opt.iter % 25 == 0
         obj_k = opt.compliance.base.obj_k
         obj_km1 = opt.compliance.base.obj_km1
         obj_km2 = opt.compliance.base.obj_km2

@@ -4,6 +4,7 @@ import json
 import matplotlib.pyplot as plt
 from matplotlib.path import Path
 from matplotlib.patches import PathPatch
+from matplotlib.patches import Ellipse
 import matplotlib.colors as colors
 import numpy as np
 from matplotlib.collections import PatchCollection
@@ -201,19 +202,28 @@ class Modeller:
                 patches.append(PathPatch(path, edgecolor=color, lw=width))
         return patches
 
-    def get_load_markers(self, size: float, width: float, color: str) -> list[PathPatch]:
+    def get_load_markers(self, color: str='gray', factor: float=3.0) -> list[PathPatch]:
         patches = []
         for node in self.structure.nodes:
-            if node.force[0] != 0:
-                v1 = np.array(node.position) + np.array([-size, 0])
-                v2 = np.array(node.position) + np.array([size, 0])
-                path = Path([v1, v2], [Path.MOVETO, Path.LINETO])
-                patches.append(PathPatch(path, edgecolor=color, lw=width))
-            if node.force[1] != 0:
-                v1 = np.array(node.position) + np.array([0, -size])
-                v2 = np.array(node.position) + np.array([0, size])
-                path = Path([v1, v2], [Path.MOVETO, Path.LINETO])
-                patches.append(PathPatch(path, edgecolor=color, lw=width))
+            forces = np.abs(np.array(node.force))
+            forces_norm = forces / forces.max()
+            fx = factor * forces_norm[0]
+            fy = factor * forces_norm[1]
+            
+            el = Ellipse(xy=node.position, width=fx, height=fy, angle=0.0, edgecolor=color, lw=0)
+            el.set_alpha(0.5)
+            patches.append(el)
+
+            #if node.force[0] != 0:
+             #   v1 = np.array(node.position) + np.array([-size, 0])
+             #   v2 = np.array(node.position) + np.array([size, 0])
+             #   path = Path([v1, v2], [Path.MOVETO, Path.LINETO])
+            #    patches.append(PathPatch(path, edgecolor=color, lw=width))
+           # if node.force[1] != 0:
+            #    v1 = np.array(node.position) + np.array([0, -size])
+             #   v2 = np.array(node.position) + np.array([0, size])
+            #    path = Path([v1, v2], [Path.MOVETO, Path.LINETO])
+             #   patches.append(PathPatch(path, edgecolor=color, lw=width))
         return patches
 
     def get_restricted_elements(self) -> dict[int, list[int]]:
@@ -279,10 +289,10 @@ class Modeller:
             raise ValueError('No layout constraints found')
 
     def plot_initial_structure(self, default_width: float, lc_width: float, supports_markers_width: float,
-                               supports_markers_size: float, forces_markers_width: float, forces_markers_size: float,
+                               supports_markers_size: float, forces_markers_size: float,
                                plot_supports: bool = True, plot_loads: bool = True,
                                supports_markers_color: str = 'green',
-                               forces_markers_color: str = 'magenta'):
+                               forces_markers_color: str = 'gray'):
         patches = []
         for element in self.structure.elements:
             p1 = element.nodes[0].position
@@ -304,7 +314,7 @@ class Modeller:
             patches.extend(self.get_support_markers(supports_markers_size, supports_markers_width,
                                                     supports_markers_color))
         if plot_loads:
-            patches.extend(self.get_load_markers(forces_markers_size, forces_markers_width, forces_markers_color))
+            patches.extend(self.get_load_markers(factor=forces_markers_size, color=forces_markers_color))
 
         ax.add_collection(PatchCollection(patches, match_original=True))
         ax.set_aspect('equal')
@@ -317,8 +327,7 @@ class Modeller:
     def plot_optimized_structure(self, base_width: float = 1.0, cutoff: float = 1e-4, plot_supports: bool = True,
                                  plot_loads: bool = True, supports_markers_width: float = 4.0,
                                  supports_markers_size: float = 0.05, supports_markers_color: str = 'green',
-                                 forces_markers_width: float = 4.0, forces_markers_size: float = 0.05,
-                                 forces_markers_color: str = 'magenta'):
+                                 forces_markers_size: float = 0.05, forces_markers_color: str = 'gray'):
         colormap = colors.ListedColormap(plt.cm.jet(np.linspace(0, 1, 10)))
         patches = []
         areas = self.last_iteration_norm_areas()
@@ -335,7 +344,7 @@ class Modeller:
             patches.extend(self.get_support_markers(supports_markers_size, supports_markers_width,
                                                     supports_markers_color))
         if plot_loads:
-            patches.extend(self.get_load_markers(forces_markers_size, forces_markers_width, forces_markers_color))
+            patches.extend(self.get_load_markers(factor=forces_markers_size, color=forces_markers_color))
 
         ax.add_collection(PatchCollection(patches, match_original=True))
         ax.set_aspect('equal')
@@ -344,7 +353,7 @@ class Modeller:
         ax.set_ylim(self.y_limits())
         # plt.title(f'Optimized structure - {self.filename.replace(".json", "")}')
         plt.colorbar(plt.cm.ScalarMappable(cmap=colormap), ax=ax, shrink=0.5)
-        #plt.show()
+        plt.show()
         plt.savefig(self.filename.replace(".json", ".png"), dpi=300)
 
     def plot_compliance(self):

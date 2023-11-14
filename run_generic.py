@@ -34,7 +34,7 @@ files = ['flower_025_1.json',
          'flower_1_05.json',
          'flower_1_025.json']
 
-modeller = Modeller(filename=files[6],
+modeller = Modeller(filename='flower_2.json',
                     data_to_save=save_data,
                     optimizer=optimizer_data)
 
@@ -49,8 +49,8 @@ modeller.write_json()
 os.system(f'julia main.jl {modeller.filename}')
 
 # ================================ Read optimized structure ================================
-markers_sizes = 0.7
-markers_width = 3
+markers_sizes = 3
+markers_width = 2
 
 modeller = Modeller.read(f'{modeller.filename}')
 
@@ -60,21 +60,19 @@ modeller = Modeller.read(f'{modeller.filename}')
                                 #supports_markers_width=markers_width,
                                 #supports_markers_color='green',
                                 #forces_markers_size=markers_sizes,
-                                #forces_markers_width=markers_width,
                                 ##forces_markers_color='magenta',
                                 #plot_loads=True,
                                 #plot_supports=True)
 
 modeller.plot_optimized_structure(cutoff=1e-4,
-                                  base_width=7,
+                                  base_width=3,
                                   supports_markers_size=markers_sizes,
                                   supports_markers_width=markers_width,
                                   supports_markers_color='green',
-                                  forces_markers_size=markers_sizes,
-                                  forces_markers_width=markers_width,
-                                  forces_markers_color='magenta',
-                                  plot_loads=False,
-                                  plot_supports=False)
+                                  forces_markers_size=20,
+                                  forces_markers_color='gray',
+                                  plot_loads=True,
+                                  plot_supports=True)
 
 #modeller.plot_compliance()
 
