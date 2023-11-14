@@ -1,9 +1,9 @@
 import os
-from data_handler import Modeller, SaveData, Optimizer, ComplianceMu, Material
+from data_handler import Modeller, SaveData, Optimizer, ComplianceMu, Material, CompliancePNorm
 
 # ================================ Defining case ================================
 case = 4
-only_read = True
+only_read = False
 use_layout_constraint = True
 case_ref = 1  # DO NOT CHANGE THIS
 
@@ -18,7 +18,7 @@ if not only_read:
                          save_volume=False,
                          save_error=False)
 
-    optimizer_data = Optimizer(compliance=ComplianceMu(beta=1e-1),
+    optimizer_data = Optimizer(compliance=CompliancePNorm(p=20.0),
                                volume_max=1.0,
                                min_iterations=20,
                                max_iterations=15000,

@@ -241,20 +241,20 @@ function update_move!(opt::Optimizer)
 end
 
 function update_damping!(opt::Optimizer)
-    if opt.iter % 50 == 0
+    if opt.iter % 1 == 0
         obj_k = opt.compliance.base.obj_k
         obj_km1 = opt.compliance.base.obj_km1
         obj_km2 = opt.compliance.base.obj_km2
         p = (obj_k - obj_km1) * (obj_km1 - obj_km2)
         for i = eachindex(p)
             if p < 0
-                opt.damping = opt.damping + 0.025
+                opt.damping *= 1.1
             elseif p[i] > 0
-                opt.damping = opt.damping - 0.025
+                opt.damping *= 0.95
             end
         end
 
-        opt.damping = max(0.0, min(opt.damping, 0.98))
+        opt.damping = max(0.05, min(opt.damping, 0.9))
     end
 end
 
