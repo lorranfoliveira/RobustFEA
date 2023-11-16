@@ -107,5 +107,5 @@ class FlowerMesh:
 
 
 if __name__ == '__main__':
-    mesh = FlowerMesh('flower_1', 0, 100, 12, 5)
+    mesh = FlowerMesh('flower_3', 0, 100, 12, 5)
     mesh.generate_structure()

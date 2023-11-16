@@ -205,14 +205,15 @@ class Modeller:
     def get_load_markers(self, color: str='gray', factor: float=3.0) -> list[PathPatch]:
         patches = []
         for node in self.structure.nodes:
-            forces = np.abs(np.array(node.force))
-            forces_norm = forces / forces.max()
-            fx = factor * forces_norm[0]
-            fy = factor * forces_norm[1]
-            
-            el = Ellipse(xy=node.position, width=fx, height=fy, angle=0.0, edgecolor=color, lw=0)
-            el.set_alpha(0.5)
-            patches.append(el)
+            if sum(np.abs(node.force)) > 0:
+                forces = np.abs(np.array(node.force))
+                forces_norm = forces / max(forces)
+                fx = factor * forces_norm[0]
+                fy = factor * forces_norm[1]
+                
+                el = Ellipse(xy=node.position, width=fx, height=fy, angle=0.0, edgecolor=color, lw=0)
+                el.set_alpha(0.5)
+                patches.append(el)
 
             #if node.force[0] != 0:
              #   v1 = np.array(node.position) + np.array([-size, 0])
@@ -351,9 +352,10 @@ class Modeller:
         ax.axis('off')
         ax.set_xlim(self.x_limits())
         ax.set_ylim(self.y_limits())
+        ax.set_title(f'elements: {len(self.structure.elements)} file: {self.filename}')
         # plt.title(f'Optimized structure - {self.filename.replace(".json", "")}')
         plt.colorbar(plt.cm.ScalarMappable(cmap=colormap), ax=ax, shrink=0.5)
-        plt.show()
+        #plt.show()
         plt.savefig(self.filename.replace(".json", ".png"), dpi=300)
 
     def plot_compliance(self):
