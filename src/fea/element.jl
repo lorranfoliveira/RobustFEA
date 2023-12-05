@@ -17,7 +17,9 @@ Defines an Element.
 - `Id must be a positive integer`: The id must be a positive integer.
 - `Element must have two nodes`: The element must have two nodes.
 """
-mutable struct Element
+abstract type BaseElement end
+
+mutable struct Element <: BaseElement
     id::Int64
     nodes::Vector{Node}
     material::Material

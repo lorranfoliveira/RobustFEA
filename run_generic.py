@@ -5,12 +5,9 @@ from data_handler import Modeller, SaveData, Optimizer, Material, CompliancePNor
 # ================================ Defining case ================================
 
 
-#filename = files[0]
-#filename = sys.argv[1]
-
 def run(filename):
     use_layout_constraint = False
-    optimize = True
+    optimize = False
     # ================================ Create json file ================================
     if optimize:
         save_data = SaveData(step=1,
@@ -44,7 +41,7 @@ def run(filename):
 
         modeller.read_structure_from_dxf(elements_material=material, elements_area=1e-5)
 
-        # modeller.write_dxf()
+        #modeller.write_dxf()
         modeller.write_json()
 
         # ================================ Run Julia optimization ================================
@@ -77,4 +74,4 @@ def run(filename):
 
     #modeller.plot_compliance()
 
-run('flower_sing.json')
+run('flower.json')
