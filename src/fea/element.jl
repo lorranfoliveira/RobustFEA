@@ -19,6 +19,15 @@ Defines an Element.
 """
 abstract type BaseElement end
 
+mutable struct ElementQ4 <: BaseElement
+    id::Int64
+    nodes::Vector{Node}
+    material::Material
+    a::Float64
+    b::Float64
+    thickness::Float64
+end
+
 mutable struct Element <: BaseElement
     id::Int64
     nodes::Vector{Node}
@@ -47,13 +56,13 @@ mutable struct Element <: BaseElement
 end
 
 """
-Returns the element length.
+Returns the bar element length.
 """
 len(element::Element)::Float64 = distance(element.nodes...)
 
-constraint(element::Element) = vcat(element.nodes[1].constraint, element.nodes[2].constraint)
+constraint(element::BaseElement) = vcat(element.nodes[1].constraint, element.nodes[2].constraint)
 
-function free_loaded_dofs(element::Element; local_dofs::Bool=false)
+function free_loaded_dofs(element::BaseElement; local_dofs::Bool=false)
     cond::Vector{Bool} = .!constraint(element) .&& forces(element, include_restricted=true) .!= 0.0
     return dofs(element, include_restricted=true, local_dofs=local_dofs)[cond]
 end
@@ -65,7 +74,7 @@ Return the degrees of freedom of the element.
 - `include_restricted::Bool=false`: If true, returns the degrees of freedom of the element including those of constrained nodes.
 - `local_dofs::Bool=false`: If true, returns the local degrees of freedom of the element.
 """
-function dofs(element::Element; include_restricted::Bool=false, local_dofs::Bool=false)::Vector{Int64}
+function dofs(element::BaseElement; include_restricted::Bool=false, local_dofs::Bool=false)::Vector{Int64}
     r::Vector{Int64} = []
 
     if local_dofs
@@ -85,17 +94,23 @@ Returns the element force vector including those of constrined degrees of freedo
 - `include_restricted::Bool=false`: If true, returns the force vector including those of constrained degrees of freedom.
 - `exclude_zeros::Bool=false`: If true, returns the force vector excluding those of zero values.
 """
-function forces(element::Element; include_restricted::Bool=false, exclude_zeros::Bool=false)::Vector{Float64}
+function forces(element::BaseElement; include_restricted::Bool=false, exclude_zeros::Bool=false)::Vector{Float64}
     return [f for node in element.nodes for f in forces(node, include_restricted=include_restricted, exclude_zeros=exclude_zeros)]
 end
 
 """
 Returns the element volume.
 """
-volume(element::Element)::Float64 = element.area * len(element)
+function volume(element::BaseElement)::Float64
+    if element isa ElementQ4
+        return 2 * element.a * 2 * element.b * element.thickness
+    elseif element isa Element
+        return element.area * len(element)
+    end
+end
 
 """
-Returns the angle (radians) between the element and the x-axis.
+Returns the angle (radians) between the bar element and the x-axis.
 """
 function angle(element::Element)::Float64
     Δc = element.nodes[2].position - element.nodes[1].position
@@ -103,7 +118,7 @@ function angle(element::Element)::Float64
 end
 
 """
-Returns the rotation matrix for the element.
+Returns the rotation matrix for the bar element.
 """
 function rotation_matrix(element::Element)::Matrix{Float64}
     θ = angle(element)
@@ -117,7 +132,7 @@ function rotation_matrix(element::Element)::Matrix{Float64}
 end
 
 """
-Returns the element local stiffness matrix.
+Returns the bar element local stiffness matrix.
 """
 function K_local(element::Element)::Matrix{Float64}
     l = len(element)
@@ -128,6 +143,21 @@ function K_local(element::Element)::Matrix{Float64}
                           0 0 0 0
                           -1 0 1 0
                           0 0 0 0]
+end
+
+"""
+Returns Q4 element local (and global) stiffness matrix.
+"""
+
+function K_Q4_local(element::ElementQ4)::Matrix{Float64}
+    a = element.a
+    b = element.b
+    t = element.thickness
+    E = element.material.young
+
+    return [t * (2 * E[1,1] * b ^ 2 + 3 * E[1,3] * a * b + 2 * E[3,3] * a ^ 2) / a / b / 6 (a ^ 2 * E[2,3] + 3//4 * b * (E[1,2] + E[3,3]) * a + b ^ 2 * E[1,3]) * t / a / b / 3 t * (-2 * E[1,1] * b ^ 2 + E[3,3] * a ^ 2) / a / b / 6 t * (a ^ 2 * E[2,3] + 3//2 * b * (E[1,2] - E[3,3]) * a - 2 * b ^ 2 * E[1,3]) / a / b / 6 -t * (E[1,1] * b ^ 2 + 3 * E[1,3] * a * b + E[3,3] * a ^ 2) / a / b / 6 -(a ^ 2 * E[2,3] + 3//2 * b * (E[1,2] + E[3,3]) * a + b ^ 2 * E[1,3]) * t / a / b / 6 t * (E[1,1] * b ^ 2 - 2 * E[3,3] * a ^ 2) / a / b / 6 -(a ^ 2 * E[2,3] + 3//4 * b * (E[1,2] - E[3,3]) * a - b ^ 2 * E[1,3] / 2) * t / a / b / 3; (a ^ 2 * E[2,3] + 3//4 * b * (E[1,2] + E[3,3]) * a + b ^ 2 * E[1,3]) * t / a / b / 3 t * (2 * a ^ 2 * E[2,2] + 3 * E[2,3] * a * b + 2 * b ^ 2 * E[3,3]) / a / b / 6 t * (a ^ 2 * E[2,3] - 3//2 * b * (E[1,2] - E[3,3]) * a - 2 * b ^ 2 * E[1,3]) / a / b / 6 t * (a ^ 2 * E[2,2] - 2 * b ^ 2 * E[3,3]) / a / b / 6 -(a ^ 2 * E[2,3] + 3//2 * b * (E[1,2] + E[3,3]) * a + b ^ 2 * E[1,3]) * t / a / b / 6 -t * (a ^ 2 * E[2,2] + 3 * E[2,3] * a * b + b ^ 2 * E[3,3]) / a / b / 6 -t * (a ^ 2 * E[2,3] - 3//4 * b * (E[1,2] - E[3,3]) * a - b ^ 2 * E[1,3] / 2) / a / b / 3 -t * (a ^ 2 * E[2,2] - b ^ 2 * E[3,3] / 2) / a / b / 3; t * (-2 * E[1,1] * b ^ 2 + E[3,3] * a ^ 2) / a / b / 6 t * (a ^ 2 * E[2,3] - 3//2 * b * (E[1,2] - E[3,3]) * a - 2 * b ^ 2 * E[1,3]) / a / b / 6 t * (2 * E[1,1] * b ^ 2 - 3 * E[1,3] * a * b + 2 * E[3,3] * a ^ 2) / a / b / 6 (a ^ 2 * E[2,3] - 3//4 * b * (E[1,2] + E[3,3]) * a + b ^ 2 * E[1,3]) * t / a / b / 3 t * (E[1,1] * b ^ 2 - 2 * E[3,3] * a ^ 2) / a / b / 6 -t * (a ^ 2 * E[2,3] - 3//4 * b * (E[1,2] - E[3,3]) * a - b ^ 2 * E[1,3] / 2) / a / b / 3 -t * (E[1,1] * b ^ 2 - 3 * E[1,3] * a * b + E[3,3] * a ^ 2) / a / b / 6 -(a ^ 2 * E[2,3] - 3//2 * b * (E[1,2] + E[3,3]) * a + b ^ 2 * E[1,3]) * t / a / b / 6; t * (a ^ 2 * E[2,3] + 3//2 * b * (E[1,2] - E[3,3]) * a - 2 * b ^ 2 * E[1,3]) / a / b / 6 t * (a ^ 2 * E[2,2] - 2 * b ^ 2 * E[3,3]) / a / b / 6 (a ^ 2 * E[2,3] - 3//4 * b * (E[1,2] + E[3,3]) * a + b ^ 2 * E[1,3]) * t / a / b / 3 t * (2 * a ^ 2 * E[2,2] - 3 * E[2,3] * a * b + 2 * b ^ 2 * E[3,3]) / a / b / 6 -(a ^ 2 * E[2,3] + 3//4 * b * (E[1,2] - E[3,3]) * a - b ^ 2 * E[1,3] / 2) * t / a / b / 3 -t * (a ^ 2 * E[2,2] - b ^ 2 * E[3,3] / 2) / a / b / 3 -(a ^ 2 * E[2,3] - 3//2 * b * (E[1,2] + E[3,3]) * a + b ^ 2 * E[1,3]) * t / a / b / 6 -t * (a ^ 2 * E[2,2] - 3 * E[2,3] * a * b + b ^ 2 * E[3,3]) / a / b / 6; -t * (E[1,1] * b ^ 2 + 3 * E[1,3] * a * b + E[3,3] * a ^ 2) / a / b / 6 -(a ^ 2 * E[2,3] + 3//2 * b * (E[1,2] + E[3,3]) * a + b ^ 2 * E[1,3]) * t / a / b / 6 t * (E[1,1] * b ^ 2 - 2 * E[3,3] * a ^ 2) / a / b / 6 -(a ^ 2 * E[2,3] + 3//4 * b * (E[1,2] - E[3,3]) * a - b ^ 2 * E[1,3] / 2) * t / a / b / 3 t * (2 * E[1,1] * b ^ 2 + 3 * E[1,3] * a * b + 2 * E[3,3] * a ^ 2) / a / b / 6 (a ^ 2 * E[2,3] + 3//4 * b * (E[1,2] + E[3,3]) * a + b ^ 2 * E[1,3]) * t / a / b / 3 t * (-2 * E[1,1] * b ^ 2 + E[3,3] * a ^ 2) / a / b / 6 t * (a ^ 2 * E[2,3] + 3//2 * b * (E[1,2] - E[3,3]) * a - 2 * b ^ 2 * E[1,3]) / a / b / 6; -(a ^ 2 * E[2,3] + 3//2 * b * (E[1,2] + E[3,3]) * a + b ^ 2 * E[1,3]) * t / a / b / 6 -t * (a ^ 2 * E[2,2] + 3 * E[2,3] * a * b + b ^ 2 * E[3,3]) / a / b / 6 -t * (a ^ 2 * E[2,3] - 3//4 * b * (E[1,2] - E[3,3]) * a - b ^ 2 * E[1,3] / 2) / a / b / 3 -t * (a ^ 2 * E[2,2] - b ^ 2 * E[3,3] / 2) / a / b / 3 (a ^ 2 * E[2,3] + 3//4 * b * (E[1,2] + E[3,3]) * a + b ^ 2 * E[1,3]) * t / a / b / 3 t * (2 * a ^ 2 * E[2,2] + 3 * E[2,3] * a * b + 2 * b ^ 2 * E[3,3]) / a / b / 6 t * (a ^ 2 * E[2,3] - 3//2 * b * (E[1,2] - E[3,3]) * a - 2 * b ^ 2 * E[1,3]) / a / b / 6 t * (a ^ 2 * E[2,2] - 2 * b ^ 2 * E[3,3]) / a / b / 6; t * (E[1,1] * b ^ 2 - 2 * E[3,3] * a ^ 2) / a / b / 6 -t * (a ^ 2 * E[2,3] - 3//4 * b * (E[1,2] - E[3,3]) * a - b ^ 2 * E[1,3] / 2) / a / b / 3 -t * (E[1,1] * b ^ 2 - 3 * E[1,3] * a * b + E[3,3] * a ^ 2) / a / b / 6 -(a ^ 2 * E[2,3] - 3//2 * b * (E[1,2] + E[3,3]) * a + b ^ 2 * E[1,3]) * t / a / b / 6 t * (-2 * E[1,1] * b ^ 2 + E[3,3] * a ^ 2) / a / b / 6 t * (a ^ 2 * E[2,3] - 3//2 * b * (E[1,2] - E[3,3]) * a - 2 * b ^ 2 * E[1,3]) / a / b / 6 t * (2 * E[1,1] * b ^ 2 - 3 * E[1,3] * a * b + 2 * E[3,3] * a ^ 2) / a / b / 6 (a ^ 2 * E[2,3] - 3//4 * b * (E[1,2] + E[3,3]) * a + b ^ 2 * E[1,3]) * t / a / b / 3; -(a ^ 2 * E[2,3] + 3//4 * b * (E[1,2] - E[3,3]) * a - b ^ 2 * E[1,3] / 2) * t / a / b / 3 -t * (a ^ 2 * E[2,2] - b ^ 2 * E[3,3] / 2) / a / b / 3 -(a ^ 2 * E[2,3] - 3//2 * b * (E[1,2] + E[3,3]) * a + b ^ 2 * E[1,3]) * t / a / b / 6 -t * (a ^ 2 * E[2,2] - 3 * E[2,3] * a * b + b ^ 2 * E[3,3]) / a / b / 6 t * (a ^ 2 * E[2,3] + 3//2 * b * (E[1,2] - E[3,3]) * a - 2 * b ^ 2 * E[1,3]) / a / b / 6 t * (a ^ 2 * E[2,2] - 2 * b ^ 2 * E[3,3]) / a / b / 6 (a ^ 2 * E[2,3] - 3//4 * b * (E[1,2] + E[3,3]) * a + b ^ 2 * E[1,3]) * t / a / b / 3 t * (2 * a ^ 2 * E[2,2] - 3 * E[2,3] * a * b + 2 * b ^ 2 * E[3,3]) / a / b / 6]
+    
+    
 end
 
 """
