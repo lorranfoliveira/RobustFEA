@@ -156,7 +156,25 @@ function generate_optimizer(filename::String)::Optimizer
         layout_constraints = nothing
     end
 
-    structure = Structure(nodes, elements)
+
+
+
+
+
+
+
+    structure = Structure(nodes, elements, supports_flexibility=1e-10)
+
+
+
+
+
+
+
+
+
+
+
 
     # =================== Create optimizer ===================
     comp = NaN

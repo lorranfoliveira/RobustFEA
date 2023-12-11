@@ -355,8 +355,8 @@ class Modeller:
         ax.set_title(f'elements: {len(self.structure.elements)} file: {self.filename}')
         # plt.title(f'Optimized structure - {self.filename.replace(".json", "")}')
         plt.colorbar(plt.cm.ScalarMappable(cmap=colormap), ax=ax, shrink=0.5)
-        #plt.show()
-        plt.savefig(self.filename.replace(".json", ".png"), dpi=300)
+        plt.show()
+        #plt.savefig(self.filename.replace(".json", ".png"), dpi=300)
 
     def plot_compliance(self):
         compliance = np.array([iteration.compliance for iteration in self.result_iterations.iterations])

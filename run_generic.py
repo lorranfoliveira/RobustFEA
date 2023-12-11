@@ -56,14 +56,14 @@ def run(filename):
 
     modeller = Modeller.read(f'{filename}')
 
-    modeller.plot_initial_structure(default_width=0.5,
-                                    lc_width=3,
-                                    supports_markers_size=markers_sizes,
-                                    supports_markers_width=markers_width,
-                                    supports_markers_color='green',
-                                    forces_markers_size=1,                                  forces_markers_color='gray',
-                                    plot_loads=True,
-                                    plot_supports=True)
+    #modeller.plot_initial_structure(default_width=0.5,
+    #                                lc_width=3,
+    #                                supports_markers_size=markers_sizes,
+    #                                supports_markers_width=markers_width,
+    #                                supports_markers_color='green',
+    #                                forces_markers_size=1,                                  forces_markers_color='gray',
+    #                                plot_loads=True,
+    #                                plot_supports=True)
 
     modeller.plot_optimized_structure(cutoff=1e-4,
                                     base_width=3,
@@ -77,4 +77,4 @@ def run(filename):
 
     #modeller.plot_compliance()
 
-run('flower.json')
+run('flower_2.json')

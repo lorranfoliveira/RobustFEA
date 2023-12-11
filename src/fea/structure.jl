@@ -4,7 +4,8 @@ include("material.jl")
 
 using NearestNeighbors, 
       LinearAlgebra,
-      SparseArrays
+      SparseArrays,
+      Statistics
 
 """
 Defines a structure for use in the finite element method.
@@ -26,8 +27,9 @@ mutable struct Structure
     nodes::Vector{Node}
     elements::Vector{Element}
     tikhonov::Float64
+    supports_flexibility::Float64
 
-    function Structure(nodes::Vector{Node}, elements::Vector{Element}; tikhonov::Float64=1e-12)
+    function Structure(nodes::Vector{Node}, elements::Vector{Element}; tikhonov::Float64=1e-12, supports_flexibility::Float64=Inf)
         if length(nodes) < 1
             throw(ArgumentError("There must be at least one node."))
         end
@@ -40,7 +42,7 @@ mutable struct Structure
             throw(ArgumentError("Tikhonov regularization must be a positive number."))
         end
         
-        new(nodes, elements, tikhonov)
+        new(nodes, elements, tikhonov, supports_flexibility)
     end
 end
 
@@ -139,9 +141,9 @@ function forces(structure::Structure; include_restricted::Bool=false, exclude_ze
     return [force for node in structure.nodes for force in forces(node, include_restricted=include_restricted, exclude_zeros=exclude_zeros)]
 end
 
-function λ(k_structure::SparseMatrixCSC{Float64}, tikhonov::Float64)::UniformScaling{Float64}
+function λ(k_structure::SparseMatrixCSC{Float64}, value::Float64)::UniformScaling{Float64}
     dg = nonzeros(diag(k_structure)) 
-    return tikhonov * (sum(dg) / length(dg)) * I
+    return value * (sum(dg) / length(dg)) * I
 end
 
 """
@@ -149,7 +151,7 @@ Returns the stiffness matrix for the given structure.
 
 TODO: This is a naive implementation. It should be improved.
 """
-function K(structure::Structure; use_tikhonov::Bool=true)::SparseMatrixCSC{Float64}
+function K(structure::Structure; use_tikhonov::Bool=false)::SparseMatrixCSC{Float64}
     n = length(structure.elements) * 4^2
     rows = ones(Int64, n)
     cols = ones(Int64, n)
@@ -175,6 +177,16 @@ function K(structure::Structure; use_tikhonov::Bool=true)::SparseMatrixCSC{Float
     cons::Vector{Bool} = constraint(structure)
     k[cons, :] .= 0.0
     k[:, cons] .= 0.0
+
+    if structure.supports_flexibility < Inf
+        dg = [v for v in diag(k) if !isapprox(v, 0.0) && v > 0.0] 
+        dg_mean = mean(dg)
+        for (i, c) in enumerate(cons)
+            if c
+                k[i, i] += structure.supports_flexibility * dg_mean
+            end
+        end
+    end
 
     if use_tikhonov
         k += λ(k, structure.tikhonov)
