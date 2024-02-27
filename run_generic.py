@@ -1,6 +1,7 @@
 import os
 import sys
-from data_handler import Modeller, SaveData, Optimizer, Material, CompliancePNorm
+from math import pi
+from data_handler import Modeller, SaveData, Optimizer, Material, CompliancePNorm, ComplianceSmoothTheta
 
 # ================================ Defining case ================================
 
@@ -22,7 +23,7 @@ def run(filename):
                                 save_volume=False,
                                 save_error=False)
 
-        optimizer_data = Optimizer(compliance=CompliancePNorm(p=30.0),
+        optimizer_data = Optimizer(compliance=ComplianceSmoothTheta(theta_r=pi/2,beta=0.1),
                                     volume_max=1.0,
                                     min_iterations=20,
                                     max_iterations=2000,

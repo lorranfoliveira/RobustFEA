@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from .base_data import BaseData
-
+from math import pi
 
 class Compliance(BaseData):
     _KEY = ''
@@ -61,3 +61,21 @@ class CompliancePNorm(Compliance):
 
     def parameters(self) -> dict:
         return {'p': self.p}
+    
+
+class ComplianceSmoothTheta(Compliance):
+    _KEY = 'smooth_theta'
+
+    def __init__(self, theta_r: float = pi/2, beta: float = 0.1):
+        super().__init__()
+        self.beta = beta
+        self.theta_r = theta_r
+
+    @classmethod
+    def read_dict(cls, dct: dict) -> type(Compliance):
+        return cls(theta_r=dct['parameters']['theta_r'],
+                   beta=dct['parameters']['beta'])
+
+    def parameters(self) -> dict:
+        return {'theta_r': self.theta_r,
+                'beta': self.beta}

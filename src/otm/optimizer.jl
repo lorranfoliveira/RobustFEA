@@ -169,7 +169,7 @@ function generate_optimizer(filename::String)::Optimizer
         comp = ComplianceNominal(structure)
     elseif comp_file["key"] == "mu"
         comp = ComplianceSmoothMu(structure, β=comp_file["parameters"]["beta"])
-    elseif comp_file["key"] == "theta_smooth"
+    elseif comp_file["key"] == "smooth_theta"
         comp = ComplianceThetaSmooth(structure,
             theta_r=comp_file["parameters"]["theta_r"],
             β=comp_file["parameters"]["beta"])
