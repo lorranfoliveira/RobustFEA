@@ -10,14 +10,14 @@ mutable struct ComplianceThetaSmooth <: Compliance
     tyy::Float64
     txy::Float64
 
-    diff_txx::Vector[Float64]
-    diff_tyy::Vector[Float64]
-    diff_txy::Vector[Float64]
+    diff_txx::Vector{Float64}
+    diff_tyy::Vector{Float64}
+    diff_txy::Vector{Float64}
 
     function ComplianceThetaSmooth(structure::Structure; theta_r::Float64=pi / 2, β::Float64=0.1)
         new(BaseCompliance(structure),
-            β,
             theta_r,
+            β,
             0.0,
             0.0,
             0.0,
@@ -126,13 +126,13 @@ function obj(compliance::ComplianceThetaSmooth)
     return max_smooth(compliance, c1, c2)
 end
 
-function diff_obj(compliance::ComplianceNominal)::Vector{Float64}
+function diff_obj(compliance::ComplianceThetaSmooth)::Vector{Float64}
     update_txx_tyy_txy(compliance)
     c1, c2 = c12(compliance)
     diff_c1, diff_c2 = diff_c12(compliance)
     return (c1 - c2) * (diff_c1 - diff_c2) / sqrt(mu^2 + (c1 - c2)^2) + diff_c1 + diff_c2
 end
 
-function forces(compliance::ComplianceNominal)
-    return forces(compliance.base.structure, include_restricted=true)
+function forces(compliance::ComplianceThetaSmooth)
+    throw(ArgumentError("Forces not implemented for ComplianceThetaSmooth"))
 end
