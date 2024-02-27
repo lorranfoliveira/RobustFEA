@@ -25,7 +25,7 @@ def run(filename):
         optimizer_data = Optimizer(compliance=CompliancePNorm(p=30.0),
                                     volume_max=1.0,
                                     min_iterations=20,
-                                    max_iterations=15000,
+                                    max_iterations=2000,
                                     use_adaptive_move=True,
                                     initial_move_multiplier=1.0,
                                     use_adaptive_damping=True,
@@ -40,7 +40,7 @@ def run(filename):
                             data_to_save=save_data,
                             optimizer=optimizer_data)
 
-        material = Material(1, 100000.0)
+        material = Material(1, 1.0)
 
         modeller.read_structure_from_dxf(elements_material=material, elements_area=1e-5)
 
@@ -77,4 +77,4 @@ def run(filename):
 
     #modeller.plot_compliance()
 
-run('flower_sing.json')
+run('example.json')
