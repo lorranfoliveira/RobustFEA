@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "robustotm"
+version = "0.1.0"
+description = ""
+authors = ["Lorran Oliveira <lorranfoliveira@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+ezdxf = "^1.1.4"
+numpy = "^1.26.4"
+matplotlib = "^3.7.5"
+julia = "^0.6.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
