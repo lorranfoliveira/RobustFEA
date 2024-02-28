@@ -78,4 +78,4 @@ def run(filename):
 
     #modeller.plot_compliance()
 
-run('example.json')
+run('cross.json')
