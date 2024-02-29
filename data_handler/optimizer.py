@@ -36,6 +36,8 @@ class Optimizer(BaseData):
             compliance = ComplianceMu.read_dict(dct[cls.KEY]['compliance'])
         elif compliance_type == 'p_norm':
             compliance = CompliancePNorm.read_dict(dct[cls.KEY]['compliance'])
+        elif compliance_type == 'smooth_theta':
+            compliance = ComplianceSmoothTheta.read_dict(dct[cls.KEY]['compliance'])
         else:
             raise ValueError(f'Unknown compliance type: {compliance_type}')
 

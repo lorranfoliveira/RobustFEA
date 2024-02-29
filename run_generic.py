@@ -10,12 +10,11 @@ from data_handler import Modeller, SaveData, Optimizer, Material, CompliancePNor
 #filename = sys.argv[1]
 
 def run(filename):
-    use_layout_constraint = False
     optimize = True
     # ================================ Create json file ================================
     if optimize:
         save_data = SaveData(step=1,
-                                save_angles=False,
+                                save_angles=True,
                                 save_areas=False,
                                 save_forces=False,
                                 save_compliance=True,
@@ -23,15 +22,15 @@ def run(filename):
                                 save_volume=False,
                                 save_error=False)
 
-        optimizer_data = Optimizer(compliance=ComplianceSmoothTheta(theta_r=pi/2,beta=0.1),
+        optimizer_data = Optimizer(compliance=ComplianceSmoothTheta(theta_r=pi/2,beta=0.01),
                                     volume_max=1.0,
-                                    min_iterations=20,
-                                    max_iterations=2000,
-                                    use_adaptive_move=True,
-                                    initial_move_multiplier=1.0,
-                                    use_adaptive_damping=True,
+                                    min_iterations=2,
+                                    max_iterations=1000,
+                                    use_adaptive_move=False,
+                                    initial_move_multiplier=0.01,
+                                    use_adaptive_damping=False,
                                     initial_damping=0.0,
-                                    use_layout_constraint=use_layout_constraint,
+                                    use_layout_constraint=False,
                                     x_min=1e-12,
                                     tolerance=1e-8)
 

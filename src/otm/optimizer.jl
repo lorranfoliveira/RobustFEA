@@ -307,6 +307,8 @@ function add_last_iteration(opt::Optimizer)
     it_dict["areas"] = get_areas(opt)
     if opt.compliance isa ComplianceNominal
         it_dict["forces"] = forces(opt.compliance.base.structure)
+    elseif opt.compliance isa ComplianceThetaSmooth
+        it_dict["forces"] = forces(opt.compliance)
     else
         it_dict["forces"] = forces(opt.compliance.base)
     end
@@ -408,7 +410,6 @@ function optimize!(opt::Optimizer)
     @info "================== Optimization finished =================="
 
     output_summary(opt)
-
 end
 
 function output_summary(opt::Optimizer)
@@ -425,6 +426,8 @@ end
 function forces_angles_per_node(opt::Optimizer)
     if opt.compliance isa ComplianceNominal
         f = forces(opt.compliance.base.structure)
+    elseif opt.compliance isa ComplianceThetaSmooth
+        f = forces(opt.compliance)
     else
         f = forces(opt.compliance.base)
     end

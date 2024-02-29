@@ -44,11 +44,10 @@ function update_txx_tyy_txy(compliance::ComplianceThetaSmooth)
     k_str = K(compliance.base.structure)
     ux = k_str \ fx
     uy = k_str \ fy
-    
 
     compliance.txx = fx' * ux
     compliance.tyy = fy' * uy
-    compliance.txy = fx' * uy
+    compliance.txy =  fx' * uy
 
     # Derivatives of txx, tyy, txy
     els = compliance.base.structure.elements
@@ -66,17 +65,13 @@ function update_txx_tyy_txy(compliance::ComplianceThetaSmooth)
     uy_full[df] = uy
 
     for (i, el) in enumerate(els)
-        kel = K(el)
-
         dofs_el = dofs(el, include_restricted=true)
         area_aux = el.area
-        el.area = 1.0
+        kel = K(el)/el.area
 
         compliance.diff_txx[i] = -ux_full[dofs_el]' * kel * ux_full[dofs_el]
         compliance.diff_tyy[i] = -uy_full[dofs_el]' * kel * uy_full[dofs_el]
         compliance.diff_txy[i] = -ux_full[dofs_el]' * kel * uy_full[dofs_el]
-
-        el.area = area_aux
     end
 end
 
@@ -110,7 +105,7 @@ function diff_obj_theta(compliance::ComplianceThetaSmooth, theta::Float64)::Vect
 end
 
 function max_smooth(compliance::ComplianceThetaSmooth, f1::Float64, f2::Float64)
-    return (f1 + f2 + sqrt((f1 - f2)^2 + compliance.β^2))
+    return (f1 + f2 + sqrt((f1 - f2)^2 + compliance.β^2))/2
 end
 
 function c12(compliance::ComplianceThetaSmooth)
@@ -135,13 +130,31 @@ function obj(compliance::ComplianceThetaSmooth)
     return max_smooth(compliance, c1, c2)
 end
 
+function theta_ef(compliance::ComplianceThetaSmooth)::Float64
+    theta_1, theta_2 = thetas_lim(compliance)
+    c1, c2 = c12(compliance)
+    c = max_smooth(compliance, c1, c2)
+
+    return abs(c - c1) < abs(c - c2) ? theta_1 : theta_2
+end
+
 function diff_obj(compliance::ComplianceThetaSmooth)::Vector{Float64}
     update_txx_tyy_txy(compliance)
     c1, c2 = c12(compliance)
     diff_c1, diff_c2 = diff_c12(compliance)
+
+    txx = compliance.txx
+    tyy = compliance.tyy
+    txy = compliance.txy
+    diff_txx = compliance.diff_txx
+    diff_tyy = compliance.diff_tyy
+    diff_txy = compliance.diff_txy
+
     return (c1 - c2) * (diff_c1 - diff_c2) / sqrt(compliance.β^2 + (c1 - c2)^2) + diff_c1 + diff_c2
 end
 
 function forces(compliance::ComplianceThetaSmooth)
-    throw(ArgumentError("Forces not implemented for ComplianceThetaSmooth"))
+    t = theta_ef(compliance)
+    fx, fy = forces_xy(compliance.base.structure)
+    return fx * cos(t) + fy * sin(t)
 end
