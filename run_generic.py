@@ -22,9 +22,9 @@ def run(filename):
                                 save_volume=False,
                                 save_error=False)
 
-        optimizer_data = Optimizer(compliance=ComplianceSmoothTheta(theta_r=pi/2,beta=0.01),
+        optimizer_data = Optimizer(compliance=ComplianceSmoothTheta(theta_r=pi/2,beta=0.9),
                                     volume_max=1.0,
-                                    min_iterations=2,
+                                    min_iterations=10,
                                     max_iterations=1000,
                                     use_adaptive_move=False,
                                     initial_move_multiplier=0.01,
@@ -61,7 +61,8 @@ def run(filename):
                                     supports_markers_size=markers_sizes,
                                     supports_markers_width=markers_width,
                                     supports_markers_color='green',
-                                    forces_markers_size=1,                                  forces_markers_color='gray',
+                                    forces_markers_size=1,                                  
+                                    forces_markers_color='gray',
                                     plot_loads=True,
                                     plot_supports=True)
 
