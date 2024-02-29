@@ -11,7 +11,7 @@ struct ComplianceSmoothMu <: ComplianceSmooth
 end
 
 function μ(compliance::ComplianceSmoothMu)
-    return compliance.β #* sum(compliance.base.eig_vals) / length(compliance.base.eig_vals)
+    return compliance.β * sum(compliance.base.eig_vals) / length(compliance.base.eig_vals)
 end
 
 

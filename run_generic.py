@@ -1,7 +1,7 @@
 import os
 import sys
 from math import pi
-from data_handler import Modeller, SaveData, Optimizer, Material, CompliancePNorm, ComplianceSmoothTheta
+from data_handler import Modeller, SaveData, Optimizer, Material, CompliancePNorm, ComplianceSmoothTheta, ComplianceMu
 
 # ================================ Defining case ================================
 
@@ -21,19 +21,21 @@ def run(filename):
                                 save_move=False,
                                 save_volume=False,
                                 save_error=False)
+        
+        #comp = ComplianceMu(0.1)
+        comp = ComplianceSmoothTheta(theta_r=pi/6,beta=0.9)
 
-        optimizer_data = Optimizer(compliance=ComplianceSmoothTheta(theta_r=pi/2,beta=0.9),
+        optimizer_data = Optimizer(compliance=comp,
                                     volume_max=1.0,
-                                    min_iterations=10,
+                                    min_iterations=2,
                                     max_iterations=1000,
                                     use_adaptive_move=False,
-                                    initial_move_multiplier=0.01,
+                                    initial_move_multiplier=0.001,
                                     use_adaptive_damping=False,
-                                    initial_damping=0.0,
+                                    initial_damping=0.5,
                                     use_layout_constraint=False,
                                     x_min=1e-12,
                                     tolerance=1e-8)
-
 
 
         modeller = Modeller(filename=filename,
@@ -56,15 +58,15 @@ def run(filename):
 
     modeller = Modeller.read(f'{filename}')
 
-    modeller.plot_initial_structure(default_width=0.5,
-                                    lc_width=3,
-                                    supports_markers_size=markers_sizes,
-                                    supports_markers_width=markers_width,
-                                    supports_markers_color='green',
-                                    forces_markers_size=1,                                  
-                                    forces_markers_color='gray',
-                                    plot_loads=True,
-                                    plot_supports=True)
+    #modeller.plot_initial_structure(default_width=0.5,
+    #                                lc_width=3,
+    #                                supports_markers_size=markers_sizes,
+    #                                supports_markers_width=markers_width,
+    #                                supports_markers_color='green',
+    #                                forces_markers_size=1,                                  
+    #                                forces_markers_color='gray',
+    #                                plot_loads=True,
+    #                                plot_supports=True)
 
     modeller.plot_optimized_structure(cutoff=1e-4,
                                     base_width=3,
