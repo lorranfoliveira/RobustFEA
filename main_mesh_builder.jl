@@ -1,5 +1,3 @@
-include("src/io/plotter/plotter.jl")
-
 include("src/builder/builder.jl")
 include("src/otm/otm.jl")
 include("src/fea/fea.jl")
