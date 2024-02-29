@@ -78,6 +78,6 @@ def run(filename):
                                     plot_loads=True,
                                     plot_supports=True)
 
-    #modeller.plot_compliance()
+    modeller.plot_compliance()
 
 run('cross.json')
