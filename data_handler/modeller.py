@@ -352,7 +352,7 @@ class Modeller:
         ax.axis('off')
         ax.set_xlim(self.x_limits())
         ax.set_ylim(self.y_limits())
-        ax.set_title(f'elements: {len(self.structure.elements)} file: {self.filename}')
+        #ax.set_title(f'elements: {len(self.structure.elements)} file: {self.filename}')
         # plt.title(f'Optimized structure - {self.filename.replace(".json", "")}')
         plt.colorbar(plt.cm.ScalarMappable(cmap=colormap), ax=ax, shrink=0.5)
         plt.show()

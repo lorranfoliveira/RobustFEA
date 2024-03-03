@@ -2,6 +2,7 @@ import os
 import sys
 from math import pi
 from data_handler import Modeller, SaveData, Optimizer, Material, CompliancePNorm, ComplianceSmoothTheta, ComplianceMu
+import numpy as np
 
 # ================================ Defining case ================================
 
@@ -23,16 +24,16 @@ def run(filename):
                                 save_error=False)
         
         #comp = ComplianceMu(0.1)
-        comp = ComplianceSmoothTheta(theta_r=pi/6,beta=0.9)
+        comp = ComplianceSmoothTheta(theta_r=pi/2, beta=1e-12)
 
         optimizer_data = Optimizer(compliance=comp,
                                     volume_max=1.0,
                                     min_iterations=2,
-                                    max_iterations=1000,
+                                    max_iterations=100,
                                     use_adaptive_move=False,
-                                    initial_move_multiplier=0.001,
+                                    initial_move_multiplier=0.01,
                                     use_adaptive_damping=False,
-                                    initial_damping=0.5,
+                                    initial_damping=0.1,
                                     use_layout_constraint=False,
                                     x_min=1e-12,
                                     tolerance=1e-8)
