@@ -26,7 +26,7 @@ def run(filename):
         #comp = ComplianceMu(0.1)
         comp = ComplianceSmoothTheta(theta_r=pi/2, beta=1e-12)
 
-        optimizer_data = Optimizer(compliance=comp,
+        optimizer_data = Optimizer(compliance=ComplianceSmoothTheta(theta_r=pi/2,beta=2.),
                                     volume_max=1.0,
                                     min_iterations=2,
                                     max_iterations=100,
