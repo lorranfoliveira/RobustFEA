@@ -23,15 +23,15 @@ def run(filename):
                                 save_volume=False,
                                 save_error=False)
         
-        #comp = ComplianceMu(0.1)
-        comp = ComplianceSmoothTheta(theta_r=pi/2, beta=1e-12)
+        #comp = ComplianceMu(0.5)
+        comp = ComplianceSmoothTheta(theta_r=pi/12, beta=0.5)
 
-        optimizer_data = Optimizer(compliance=ComplianceSmoothTheta(theta_r=pi/2,beta=2.),
+        optimizer_data = Optimizer(compliance=comp,
                                     volume_max=1.0,
                                     min_iterations=2,
-                                    max_iterations=100,
+                                    max_iterations=1000,
                                     use_adaptive_move=False,
-                                    initial_move_multiplier=0.01,
+                                    initial_move_multiplier=0.1,
                                     use_adaptive_damping=False,
                                     initial_damping=0.1,
                                     use_layout_constraint=False,
@@ -81,4 +81,4 @@ def run(filename):
 
     modeller.plot_compliance()
 
-run('cross.json')
+run('example2.json')

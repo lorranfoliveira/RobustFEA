@@ -2,11 +2,16 @@ from matplotlib import pyplot as plt
 import numpy as np
 from math import sqrt, atan2, pi, cos, sin
 import matplotlib
+import sys
 
 matplotlib.use('TkAgg')
 
 plt.rcParams["font.family"] = "Times New Roman"
 plt.rcParams["font.size"] = 12
+
+
+def smooth_max(x, y, mu):
+    return (x + y + sqrt((x - y) ** 2 + mu ** 2)) / 2
 
 
 class Example:
@@ -18,14 +23,19 @@ class Example:
     BETA = 0.0
     THETA_R = np.pi / 6
     MU = 0.0
+    MU_THETA = 0.0
 
     # Plot data
     N_POINTS = 1000
-    N_CONTOURS = 10
+    N_CONTOURS = 20
     X_PLOT_MIN = 3e-2
     X_PLOT_MAX = 0.20
     Y_PLOT_MIN = 3e-2
     Y_PLOT_MAX = 0.20
+
+    xc_min = 0
+    yc_min = 0
+    c_min = 0
 
     def txx(self, x1, x2) -> float:
         pass
@@ -53,40 +63,22 @@ class Example:
         tyy = self.tyy(x1, x2)
         txy = self.txy(x1, x2)
 
-        theta_cr_max = atan2(2 * txy, txx - tyy) / 2
+        theta_cr1 = atan2(2 * txy, txx - tyy) / 2
+        theta_cr2 = theta_cr1 - np.sign(theta_cr1 + sys.float_info.epsilon) * pi / 2
 
-        if -pi / 2 <= (aux := theta_cr_max + pi / 2) <= pi / 2:
-            theta_cr_min = aux
-        else:
-            theta_cr_min = theta_cr_max - pi / 2
+        t1 = min(max(theta_cr1, -self.THETA_R), self.THETA_R)
+        t2 = min(max(theta_cr2, -self.THETA_R), self.THETA_R)
 
-        if (theta_cr_max <= -self.THETA_R and theta_cr_min <= -self.THETA_R) or (
-                theta_cr_max >= self.THETA_R and theta_cr_min >= self.THETA_R):
-            theta_1 = -self.THETA_R
-            theta_2 = self.THETA_R
-        else:
-            if theta_cr_max < -self.THETA_R:
-                theta_1 = -self.THETA_R
-            elif theta_cr_max > self.THETA_R:
-                theta_1 = self.THETA_R
-            else:
-                theta_1 = theta_cr_max
-
-            if theta_cr_min < -self.THETA_R:
-                theta_2 = -self.THETA_R
-            elif theta_cr_min > self.THETA_R:
-                theta_2 = self.THETA_R
-            else:
-                theta_2 = theta_cr_min
-
-        return theta_1, theta_2
+        return t1, t2
 
     def c_ef(self, x1, x2):
         theta_1, theta_2 = self.thetas_lim(x1, x2)
         c1 = self.c_theta(x1, x2, theta_1)
         c2 = self.c_theta(x1, x2, theta_2)
 
-        return (c1 + c2 + sqrt((c1 - c2) ** 2 + self.mu(x1, x2) ** 2)) / 2
+        vc = self.volume_constraint(x1, x2)
+
+        return smooth_max(c1, c2, self.mu(x1, x2)) if vc < 0 else np.nan
 
     def volume_constraint(self, x1, x2) -> float:
         pass
@@ -106,20 +98,25 @@ class Example:
 
         for i in range(self.N_POINTS):
             for j in range(self.N_POINTS):
-                z_tmp = self.c_ef(x_mesh[i, j], y_mesh[i, j])
-                if self.volume_constraint(x_mesh[i, j], y_mesh[i, j]) < 0:
-                    z_mesh[i, j] = z_tmp
-                    if z_tmp < z_min:
-                        z_min = z_tmp
+                z_mesh[i, j] = self.c_ef(x_mesh[i, j], y_mesh[i, j])
+                if z_mesh[i, j] is not np.nan:
+                    if z_mesh[i, j] < z_min:
+                        z_min = z_mesh[i, j]
                         x1_z_min = x_mesh[i, j]
                         x2_z_min = y_mesh[i, j]
-                else:
-                    z_mesh[i, j] = np.nan
 
         ax.contour(x_mesh, y_mesh, z_mesh, self.N_CONTOURS, linewidths=0.4, linestyles='solid', colors='k')
         cont = ax.contourf(x_mesh, y_mesh, z_mesh, self.N_CONTOURS, cmap='jet')
         ax.scatter(x1_z_min, x2_z_min, marker='o', color='orange', s=40, edgecolors='k', linewidths=0.5,
                    label=f'Cmin: {np.nanmin(z_mesh):.2f}')
+
+        print(f'txx: {self.txx(x1_z_min, x2_z_min)}\n'
+              f'tyy: {self.tyy(x1_z_min, x2_z_min)}\n'
+              f'txy: {self.txy(x1_z_min, x2_z_min)}\n')
+
+        self.xc_min = x1_z_min
+        self.yc_min = x2_z_min
+        self.c_min = np.nanmin(z_mesh)
 
         plt.colorbar(cont, label='Compliance')
         plt.xlabel('x1')
@@ -136,6 +133,16 @@ class Example:
         plt.legend()
         plt.show()
 
+    def plot_2d(self):
+        x = np.linspace(0.010768, 0.01077, self.N_POINTS ** 2)
+        y_func = np.vectorize(self.c_ef)
+        y = y_func(x, 0.035)
+
+        plt.plot(x, y)
+        plt.show()
+        plt.xlabel('x1')
+        plt.ylabel('Compliance')
+
 
 class Cross(Example):
     # Design data
@@ -147,8 +154,8 @@ class Cross(Example):
 
     # Optimization data
     V = 1
-    BETA = 0.00
-    THETA_R = np.pi / 6
+    BETA = 0.5
+    THETA_R = np.pi / 2
     MU = 0.0
 
     # Plot data
@@ -181,8 +188,8 @@ class Example2(Example):
 
     # Optimization data
     V = 1
-    BETA = 0.5
-    THETA_R = np.pi / 15
+    BETA = 0.0
+    THETA_R = np.pi / 10
     MU = 0.0
 
     # Plot data
@@ -222,5 +229,8 @@ class Example2(Example):
 
 
 ex = Example2()
-# print(ex.c_ef(0.125, 0.125))
+ex.BETA = 0.1
+ex.N_CONTOURS = 30
+ex.THETA_R = pi / 12
 ex.plot_contour()
+ex.plot_2d()

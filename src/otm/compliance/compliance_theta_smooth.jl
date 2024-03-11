@@ -156,7 +156,7 @@ end
 
 function obj(compliance::ComplianceThetaSmooth)
     θ1, θ2 = thetas_lim(compliance)
-    println("θ1: $θ1, θ2: $θ2, txx: $(compliance.txx), tyy: $(compliance.tyy), txy: $(compliance.txy)")
+    #println("θ1: $θ1, θ2: $θ2, txx: $(compliance.txx), tyy: $(compliance.tyy), txy: $(compliance.txy)")
     update_txx_tyy_txy(compliance)
     c1, c2 = c12(compliance)
     return max_smooth(compliance, c1, c2)

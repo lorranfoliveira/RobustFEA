@@ -278,7 +278,14 @@ function update_x!(opt::Optimizer)
         update_move!(opt)
     end
 
-    η = 0.5
+    if opt.iter == 1
+        η = 0.5
+    else
+        a = 1 .+ log.(opt.df_obj_k ./ opt.df_obj_km1) ./ log.(opt.x_k ./ opt.x_km1)
+        a = max.(min.(a, -0.1), -15)
+        η = 1 ./ (1 .- a)
+    end
+
     bm = -opt.df_obj_k ./ opt.df_vol
     l1 = 0.0
     l2 = 1.2 * maximum(bm)
@@ -287,7 +294,7 @@ function update_x!(opt::Optimizer)
     while l2 - l1 > opt.tol * (l2 + 1)
         lm = (l1 + l2) / 2
         be = max.(0.0, bm / lm)
-        xt = @. opt.x_min + (opt.x_k - opt.x_min) * be^η
+        xt = @. opt.x_min + (opt.x_k - opt.x_min) * be.^η
         x_new = @. max(max(min(min(xt, opt.x_k + opt.move), opt.x_max), opt.x_k - opt.move), opt.x_min)
         if (opt.vol - opt.volume_max) + opt.df_vol' * (x_new - opt.x_k) > 0
             l1 = lm
