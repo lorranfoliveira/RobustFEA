@@ -24,7 +24,7 @@ def run(filename):
                                 save_error=False)
         
         #comp = ComplianceMu(0.5)
-        comp = ComplianceSmoothTheta(theta_r=pi/12, beta=0.5)
+        comp = ComplianceSmoothTheta(theta_r=pi/15, beta=0.1)
 
         optimizer_data = Optimizer(compliance=comp,
                                     volume_max=1.0,
@@ -81,4 +81,4 @@ def run(filename):
 
     modeller.plot_compliance()
 
-run('example2.json')
+run('cross.json')

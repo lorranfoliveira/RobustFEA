@@ -1,6 +1,6 @@
 include("compliance/compliance.jl")
 
-using JSON, Statistics
+using JSON, Statistics, JuMP, NLopt
 
 mutable struct Optimizer
     # manual
@@ -442,3 +442,5 @@ function forces_angles_per_node(opt::Optimizer)
     angs = [atan(f[i+1], f[i]) for i in 1:2:length(f)]
     return angs
 end
+
+
