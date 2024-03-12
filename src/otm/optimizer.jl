@@ -1,6 +1,6 @@
 include("compliance/compliance.jl")
 
-using JSON, Statistics, JuMP, NLopt
+using JSON, Statistics, JuMP, NLopt, Plots, ColorSchemes
 
 mutable struct Optimizer
     # manual
@@ -37,6 +37,8 @@ mutable struct Optimizer
 
     layout_constraint::Union{Dict{Int64,Vector{Int64}},Nothing}
     layout_constraint_divisions::Union{Int}
+
+    results::Dict{String, Vector}
 
     function Optimizer(compliance::T, filename::String; volume_max::Float64=1.0,
         initial_move_parameter::Float64=1.0,
@@ -95,7 +97,8 @@ mutable struct Optimizer
             df_vol_init,
             vol,
             layout_constraint,
-            layout_constraint_divisions)
+            layout_constraint_divisions,
+            Dict{String, Vector}())
     end
 end
 
@@ -262,7 +265,6 @@ function update_damping!(opt::Optimizer)
     end
 end
 
-
 function update_x!(opt::Optimizer)
     opt.vol = volume(opt.compliance.base.structure)
     opt.df_obj_k = diff_obj(opt.compliance)
@@ -371,13 +373,105 @@ function add_output_data(opt::Optimizer)
     end
 end
 
+function update_x_nlopt(opt::Optimizer)
+    els = opt.compliance.base.structure.elements
+    n = length(els)
+    opt.iter = 0
+    opt.results["obj"] = []
+    opt.results["diff_obj"] = []
+    opt.results["volume"] = []
+    opt.results["x"] = []
+    
+    function C(x::Vector, g::Vector)
+        # update areas 
+        for i = eachindex(x)
+            els[i].area = x[i]
+        end
+        g .= diff_obj(opt.compliance)
+        o = obj(opt.compliance)
+
+        opt.iter += 1
+        
+        push!(opt.results["obj"], o)
+        push!(opt.results["diff_obj"], g)
+        push!(opt.results["volume"], volume(opt.compliance.base.structure))
+        push!(opt.results["x"], x)  
+
+        println("i: $(opt.iter) Obj: $o")
+        return o
+    end
+
+    function Vc(x::Vector, g::Vector)
+        for i = eachindex(x)
+            els[i].area = x[i]
+        end
+        for i = eachindex(x)
+            g[i] = len(els[i])
+        end
+        return volume(opt.compliance.base.structure) - opt.volume_max
+    end
+
+    optim = Opt(NLopt.:LD_CCSAQ, n)
+    #optim = Opt(NLopt.:LD_CCSAQ, n)
+    #optim = Opt(NLopt.:LN_COBYLA, n)
+    optim.min_objective = C
+    optim.xtol_rel = 1e-4
+    optim.inequality_constraint = Vc
+    optim.params["verbosity"] = 0
+
+    optim.lower_bounds = fill(opt.x_min, n)
+    optim.upper_bounds = fill(opt.x_max, n)
+
+    x0 = opt.x_k
+
+    println("starting simulation ...")
+
+    (minf, minx, ret) = optimize(optim, x0)
+
+    opt.x_k = minx
+    set_areas(opt)
+end
+
+function plot_compliance(opt::Optimizer)
+    p = plot(1:length(opt.results["obj"]), opt.results["obj"], label="MMA", xlabel="Iterations", ylabel="Compliance value", title="Objective Function Value vs Iterations", lw=1, color=:blue, legend=:topleft)
+    #savefig(p, "compliance.png")
+    display(p)
+    sleep(100)
+end
+
+function plot_optimized_structure(opt::Optimizer)
+    els = opt.compliance.base.structure.elements
+    n = length(els)
+    x_max = maximum(opt.x_k)
+    p = plot(ticks = false, aspect_ratio=:equal)
+
+    for (i,el) in enumerate(els)
+        node1 = el.nodes[1]
+        node2 = el.nodes[2]
+        area = el.area/x_max
+        plot!(p, [node1.position[1], node2.position[1]], 
+                 [node1.position[2], node2.position[2]], 
+                 color = :black, 
+                 linewidth=4*area, 
+                 legend=:false)
+    end
+    display(p)
+    sleep(100)
+end
+
 function optimize!(opt::Optimizer)
     opt.output = JSON.parsefile(opt.filename)
     error = Inf
     opt.iter = 1
     set_areas(opt)
 
-    while error > opt.tol && opt.iter < opt.max_iters
+    # JuMP Solution
+    update_x_nlopt(opt)
+
+    plot_compliance(opt)
+    #plot_optimized_structure(opt)
+
+    #= while error > opt.tol && opt.iter < opt.max_iters
         if opt.layout_constraint_divisions ≥ 1 #&& opt.iter % 500 == 0 && opt.iter > 0
             @warn "Applying automatic layout constraint"
             automatic_layout_constraint!(opt)
@@ -416,7 +510,7 @@ function optimize!(opt::Optimizer)
 
     @info "================== Optimization finished =================="
 
-    output_summary(opt)
+    output_summary(opt) =#
 end
 
 function output_summary(opt::Optimizer)

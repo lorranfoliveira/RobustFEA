@@ -228,9 +228,9 @@ class Example2(Example):
         return x1 * self.L1 + x2 * self.L2 - self.V
 
 
-ex = Example2()
-ex.BETA = 0.1
+ex = Cross()
+ex.BETA = 0.01
 ex.N_CONTOURS = 30
-ex.THETA_R = pi / 12
+ex.THETA_R = pi / 100
 ex.plot_contour()
 ex.plot_2d()

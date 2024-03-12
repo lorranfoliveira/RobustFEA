@@ -15,7 +15,7 @@ def run(filename):
     # ================================ Create json file ================================
     if optimize:
         save_data = SaveData(step=1,
-                                save_angles=True,
+                                save_angles=False,
                                 save_areas=False,
                                 save_forces=False,
                                 save_compliance=True,
@@ -24,7 +24,7 @@ def run(filename):
                                 save_error=False)
         
         #comp = ComplianceMu(0.5)
-        comp = ComplianceSmoothTheta(theta_r=pi/15, beta=0.1)
+        comp = ComplianceSmoothTheta(theta_r=pi/6, beta=0.02)
 
         optimizer_data = Optimizer(compliance=comp,
                                     volume_max=1.0,
@@ -54,10 +54,10 @@ def run(filename):
         os.system(f'julia main.jl {modeller.filename}')
 
     # ================================ Read optimized structure ================================
-    markers_sizes = 0.05
-    markers_width = 2
+    #markers_sizes = 0.05
+    #markers_width = 2
 
-    modeller = Modeller.read(f'{filename}')
+    #modeller = Modeller.read(f'{filename}')
 
     #modeller.plot_initial_structure(default_width=0.5,
     #                                lc_width=3,
@@ -69,16 +69,16 @@ def run(filename):
     #                                plot_loads=True,
     #                                plot_supports=True)
 
-    modeller.plot_optimized_structure(cutoff=1e-4,
-                                    base_width=3,
-                                    supports_markers_size=markers_sizes,
-                                    supports_markers_width=markers_width,
-                                    supports_markers_color='green',
-                                    forces_markers_size=1,
-                                    forces_markers_color='gray',
-                                    plot_loads=True,
-                                    plot_supports=True)
+    #modeller.plot_optimized_structure(cutoff=1e-4,
+    #                                base_width=3,
+    #                                supports_markers_size=markers_sizes,
+    #                                supports_markers_width=markers_width,
+    #                                supports_markers_color='green',
+    #                                forces_markers_size=1,
+    #                                forces_markers_color='gray',
+    #                                plot_loads=True,
+    #                                plot_supports=True)
 
-    modeller.plot_compliance()
+    #modeller.plot_compliance()
 
-run('cross.json')
+run('example3.json')

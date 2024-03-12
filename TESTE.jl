@@ -1,30 +1,39 @@
+using Plots
 
-using JuMP, NLopt
+# Função para gerar uma reta aleatória
+function gerar_reta()
+    # Gerando coeficientes aleatórios
+    a = rand() * 10
+    b = rand() * 10
 
-function solve()
-    x_min = -10.0
-    x_max = 10.0
+    # Gerando pontos para a reta
+    x = linspace(0, 10, 100)
+    y = a * x + b
 
-    C(x...) = x[1]^2+2*x[1]*x[2]+3*x[2]^2+4*x[1]+5*x[2]+6
-
-    function C_grad(g::AbstractVector, x...)
-        g[1] = 2*x[1] + 2*x[2] + 4
-        g[2] = 2*x[1] + 6*x[2] + 5
-        return
-    end
-
-    model = Model(NLopt.Optimizer)
-    set_optimizer_attribute(model, "algorithm", :LD_MMA)
-    set_optimizer_attribute(model, "print_level", 7)
-
-    JuMP.register(model, :C, 2, C, C_grad; autodiff=false)
-
-    JuMP.@variable(model, x_min <= x[i=1:2] <= x_max)
-
-    JuMP.@NLobjective(model, Min, C(x...))
-    JuMP.optimize!(model)
-
-    solution_summary(model; verbose = true)
+    return (x, y)
 end
 
-solve()
+# Gerando 5 retas aleatórias
+retas = [gerar_reta() for i in 1:5]
+
+# Gerando cores e espessuras aleatórias
+cores = rand(RGB, 5)
+espessuras = rand(5, 10)
+
+# Plotando as retas
+plot(retas[1][1], retas[1][2], color=cores[1], linewidth=espessuras[1])
+plot(retas[2][1], retas[2][2], color=cores[2], linewidth=espessuras[2])
+plot(retas[3][1], retas[3][2], color=cores[3], linewidth=espessuras[3])
+plot(retas[4][1], retas[4][2], color=cores[4], linewidth=espessuras[4])
+plot(retas[5][1], retas[5][2], color=cores[5], linewidth=espessuras[5])
+
+# Criando um colorbar
+colorbar(espessuras, legend=false)
+
+# Ajustando o título e os rótulos dos eixos
+title("Gráfico com várias retas independentes")
+xlabel("x")
+ylabel("y")
+
+# Mostrando o gráfico
+show()

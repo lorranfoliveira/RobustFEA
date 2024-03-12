@@ -9,8 +9,6 @@ otm = generate_optimizer(ARGS[1])
 #    end
 #end
 
-println(otm.x_k)
-
 optimize!(otm)
 
 println(obj(otm.compliance))
