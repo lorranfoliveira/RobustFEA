@@ -73,8 +73,8 @@ function update_txx_tyy_txy(compliance::ComplianceThetaSmooth)
 
     for (i, el) in enumerate(els)
         dofs_el = dofs(el, include_restricted=true)
-        area_aux = el.area
-        kel = K(el)/el.area
+
+        kel = diff_K(el)
 
         compliance.diff_txx[i] = -ux_full[dofs_el]' * kel * ux_full[dofs_el]
         compliance.diff_tyy[i] = -uy_full[dofs_el]' * kel * uy_full[dofs_el]
@@ -89,32 +89,10 @@ function thetas_lim(compliance::ComplianceThetaSmooth)
     theta_r = compliance.theta_r
 
     theta_cr_max = atan(2 * txy, txx - tyy) / 2
-    theta_cr_min = theta_cr_max + pi / 2
+    theta_cr_min = theta_cr_max - sign(theta_cr_max + eps()) * pi / 2
 
-    if !(-pi / 2 <= theta_cr_min <= pi / 2)
-        theta_cr_min = theta_cr_max - pi/2
-    end
-
-    if (theta_cr_max <= -theta_r && theta_cr_min <= -theta_r) || (theta_cr_max >= theta_r && theta_cr_min >= theta_r)
-        theta_1 = -theta_r
-        theta_2 = theta_r
-    else
-        if theta_cr_max < -theta_r
-            theta_1 = -theta_r
-        elseif theta_cr_max > theta_r
-            theta_1 = theta_r
-        else
-            theta_1 = theta_cr_max
-        end
-
-        if theta_cr_min < -theta_r
-            theta_2 = -theta_r
-        elseif theta_cr_min > theta_r
-            theta_2 = theta_r
-        else
-            theta_2 = theta_cr_min
-        end
-    end
+    theta_1 = min(max(theta_cr_max, -theta_r), theta_r)
+    theta_2 = min(max(theta_cr_min, -theta_r), theta_r)
 
     return theta_1, theta_2
 end
@@ -131,7 +109,7 @@ function diff_obj_theta(compliance::ComplianceThetaSmooth, theta::Float64)::Vect
     diff_tyy = compliance.diff_tyy
     diff_txy = compliance.diff_txy
 
-    return 1 / 2 * (diff_txx - diff_tyy) * cos(2 * theta) + sin(2 * theta) * diff_txy + 1 / 2 * diff_txx + 1 / 2 * diff_tyy
+    return @. 1 / 2 * (diff_txx - diff_tyy) * cos(2 * theta) + sin(2 * theta) * diff_txy + 1 / 2 * diff_txx + 1 / 2 * diff_tyy
 end
 
 function max_smooth(compliance::ComplianceThetaSmooth, f1::Float64, f2::Float64)
@@ -155,8 +133,6 @@ function diff_c12(compliance::ComplianceThetaSmooth)
 end
 
 function obj(compliance::ComplianceThetaSmooth)
-    θ1, θ2 = thetas_lim(compliance)
-    #println("θ1: $θ1, θ2: $θ2, txx: $(compliance.txx), tyy: $(compliance.tyy), txy: $(compliance.txy)")
     update_txx_tyy_txy(compliance)
     c1, c2 = c12(compliance)
     return max_smooth(compliance, c1, c2)
@@ -182,7 +158,7 @@ function diff_obj(compliance::ComplianceThetaSmooth)::Vector{Float64}
     diff_tyy = compliance.diff_tyy
     diff_txy = compliance.diff_txy
 
-    return (c1 - c2) * (diff_c1 - diff_c2) / sqrt(compliance.μ^2 + (c1 - c2)^2) + diff_c1 + diff_c2
+    return ((c1 - c2) * (diff_c1 - diff_c2) / sqrt(compliance.μ^2 + (c1 - c2)^2) + diff_c1 + diff_c2) / 2
 end
 
 function forces(compliance::ComplianceThetaSmooth)

@@ -1,7 +1,7 @@
 include("src/otm/otm.jl")
 
 otm = generate_optimizer(ARGS[1])
-#otm = generate_optimizer("cross.json")
+#otm = generate_optimizer("example2.json")
 
 #if length(otm.x_k) == 4
 #    for i=1:4

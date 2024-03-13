@@ -1,11 +1,10 @@
 import os
 import sys
 from math import pi
-from data_handler import Modeller, SaveData, Optimizer, Material, CompliancePNorm, ComplianceSmoothTheta, ComplianceMu
+from data_handler import Modeller, SaveData, Optimizer, Material, CompliancePNorm, ComplianceSmoothTheta, ComplianceMu, ComplianceNominal
 import numpy as np
 
 # ================================ Defining case ================================
-
 
 #filename = files[0]
 #filename = sys.argv[1]
@@ -24,7 +23,8 @@ def run(filename):
                                 save_error=False)
         
         #comp = ComplianceMu(0.5)
-        comp = ComplianceSmoothTheta(theta_r=pi/6, beta=0.02)
+        comp = ComplianceSmoothTheta(theta_r=np.radians(90), beta=0.01)
+        #comp = ComplianceNominal()
 
         optimizer_data = Optimizer(compliance=comp,
                                     volume_max=1.0,
@@ -36,7 +36,7 @@ def run(filename):
                                     initial_damping=0.1,
                                     use_layout_constraint=False,
                                     x_min=1e-12,
-                                    tolerance=1e-8)
+                                    tolerance=1e-10)
 
 
         modeller = Modeller(filename=filename,
@@ -54,31 +54,31 @@ def run(filename):
         os.system(f'julia main.jl {modeller.filename}')
 
     # ================================ Read optimized structure ================================
-    #markers_sizes = 0.05
-    #markers_width = 2
+    markers_sizes = 0.05
+    markers_width = 2
 
-    #modeller = Modeller.read(f'{filename}')
+    modeller = Modeller.read(f'{filename}')
 
-    #modeller.plot_initial_structure(default_width=0.5,
-    #                                lc_width=3,
-    #                                supports_markers_size=markers_sizes,
-    #                                supports_markers_width=markers_width,
-    #                                supports_markers_color='green',
-    #                                forces_markers_size=1,                                  
-    #                                forces_markers_color='gray',
-    #                                plot_loads=True,
-    #                                plot_supports=True)
+    modeller.plot_initial_structure(default_width=0.5,
+                                    lc_width=3,
+                                    supports_markers_size=markers_sizes,
+                                    supports_markers_width=markers_width,
+                                    supports_markers_color='green',
+                                    forces_markers_size=1,                                  
+                                    forces_markers_color='gray',
+                                    plot_loads=True,
+                                    plot_supports=True)
 
-    #modeller.plot_optimized_structure(cutoff=1e-4,
-    #                                base_width=3,
-    #                                supports_markers_size=markers_sizes,
-    #                                supports_markers_width=markers_width,
-    #                                supports_markers_color='green',
-    #                                forces_markers_size=1,
-    #                                forces_markers_color='gray',
-    #                                plot_loads=True,
-    #                                plot_supports=True)
+    modeller.plot_optimized_structure(cutoff=1e-4,
+                                    base_width=3,
+                                    supports_markers_size=markers_sizes,
+                                    supports_markers_width=markers_width,
+                                    supports_markers_color='green',
+                                    forces_markers_size=1,
+                                    forces_markers_color='gray',
+                                    plot_loads=True,
+                                    plot_supports=True)
 
-    #modeller.plot_compliance()
+    modeller.plot_compliance()
 
-run('example3.json')
+run('fan.json')
