@@ -376,33 +376,41 @@ function add_output_data(opt::Optimizer)
     end
 end
 
+function t_to_x(opt::Optimizer, t::Float64)::Float64
+    return opt.x_min + (opt.x_max - opt.x_min)*t
+end
+
+function t_to_x(opt::Optimizer, t::Vector{Float64})::Vector{Float64}
+    return @. opt.x_min + (opt.x_max - opt.x_min)*t
+end
+
 function update_x_nlopt(opt::Optimizer)
     els = opt.compliance.base.structure.elements
     n = length(els)
     opt.iter = 0
 
-    function C(x::Vector, g::Vector)
+    function C(t::Vector, g::Vector)
         # update areas 
-        for i = eachindex(x)
-            els[i].area = x[i]
+        for i = eachindex(t)
+            els[i].area = t_to_x(opt, t[i])
         end
 
-        g .= diff_obj(opt.compliance)
+        g .= (opt.x_max - opt.x_min) * diff_obj(opt.compliance)
         obj_k = obj(opt.compliance)
 
-        update_optimizer_obj_values!(opt, x, obj_k)
+        update_optimizer_obj_values!(opt, t, obj_k)
 
         return obj_k
     end
 
-    function Vc(x::Vector, g::Vector)
-        for i = eachindex(x)
-            els[i].area = x[i]
+    function Vc(t::Vector, g::Vector)
+        for i = eachindex(t)
+            els[i].area = t_to_x(opt, t[i])
         end
-        for i = eachindex(x)
+        for i = eachindex(t)
             g[i] = len(els[i])
         end
-        return volume(opt.compliance.base.structure) - opt.volume_max
+        return (opt.x_max - opt.x_min) * (volume(opt.compliance.base.structure) - opt.volume_max)
     end
 
     if opt.algorithm == :MMA
@@ -421,11 +429,11 @@ function update_x_nlopt(opt::Optimizer)
     optim.lower_bounds = fill(opt.x_min, n)
     optim.upper_bounds = fill(opt.x_max, n)
 
-    x0 = opt.x_k
+    t0 = @. (opt.x_k-opt.x_min)/(opt.x_max-opt.x_min)
 
-    (minf, minx, ret) = optimize(optim, x0)
+    (minf, mint, ret) = optimize(optim, t0)
 
-    opt.x_k = minx
+    opt.x_k = t_to_x(opt, mint)
     set_areas(opt)
 end
 

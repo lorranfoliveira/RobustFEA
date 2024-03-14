@@ -22,21 +22,22 @@ def run(filename):
                                 save_volume=False,
                                 save_error=False)
         
-        #comp = ComplianceMu(0.5)
-        comp = ComplianceSmoothTheta(theta_r=np.radians(90), beta=0.01)
+        #comp = ComplianceMu(0.1)
+        comp = ComplianceSmoothTheta(theta_r=np.radians(90), beta=0.001)
+        #comp = CompliancePNorm(p=20.0)
         #comp = ComplianceNominal()
 
         optimizer_data = Optimizer(compliance=comp,
                                     volume_max=1.0,
                                     min_iterations=2,
-                                    max_iterations=1000,
+                                    max_iterations=5000,
                                     use_adaptive_move=False,
                                     initial_move_multiplier=0.1,
                                     use_adaptive_damping=False,
-                                    initial_damping=0.1,
+                                    initial_damping=0.0,
                                     use_layout_constraint=False,
                                     x_min=1e-12,
-                                    tolerance=1e-10)
+                                    tolerance=1e-8)
 
 
         modeller = Modeller(filename=filename,

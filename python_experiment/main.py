@@ -229,8 +229,8 @@ class Example2(Example):
 
 
 ex = Cross()
-ex.BETA = 0.01
+ex.BETA = 0.1
 ex.N_CONTOURS = 30
-ex.THETA_R = pi / 100
+ex.THETA_R = pi / 4
 ex.plot_contour()
 ex.plot_2d()
