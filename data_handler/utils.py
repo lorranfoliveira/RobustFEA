@@ -36,4 +36,4 @@ def generate_fan_example(b, n):
     doc.saveas("fan.dxf")
 
 
-generate_fan_example(20, 5001)
+generate_fan_example(20, 35)

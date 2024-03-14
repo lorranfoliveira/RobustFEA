@@ -41,6 +41,12 @@ mutable struct Optimizer
     results::Dict{String,Vector}
     algorithm::Symbol
 
+    # MMA parameters
+    t_min::Float64
+    t_max::Float64
+    a0::Float64
+    a1::Float64
+
     function Optimizer(compliance::T, filename::String; volume_max::Float64=1.0,
         initial_move_parameter::Float64=1.0,
         use_adaptive_move::Bool=true,
@@ -74,6 +80,12 @@ mutable struct Optimizer
 
         vol = 0.0
 
+        # MMA parameters
+        t_min = 0.1
+        t_max = 100.0
+        a0 = -(t_min*x_max - t_max*x_min)/(t_max - t_min)
+        a1 = (x_max - x_min)/(t_max - t_min)
+
         new(compliance,
             filename,
             volume_max,
@@ -101,7 +113,11 @@ mutable struct Optimizer
             layout_constraint,
             layout_constraint_divisions,
             Dict{String,Vector}(),
-            algorithm)
+            algorithm,
+            t_min,
+            t_max,
+            a0,
+            a1)
     end
 end
 
@@ -377,11 +393,19 @@ function add_output_data(opt::Optimizer)
 end
 
 function t_to_x(opt::Optimizer, t::Float64)::Float64
-    return opt.x_min + (opt.x_max - opt.x_min)*t
+    return opt.a0 + opt.a1*t
 end
 
 function t_to_x(opt::Optimizer, t::Vector{Float64})::Vector{Float64}
-    return @. opt.x_min + (opt.x_max - opt.x_min)*t
+    return @. opt.a0 + opt.a1*t
+end
+
+function x_to_t(opt::Optimizer, x::Float64)::Float64
+    return -(opt.a0 - x)/opt.a1
+end
+
+function x_to_t(opt::Optimizer, x::Vector{Float64})::Vector{Float64}
+    return @. -(opt.a0 - x)/opt.a1
 end
 
 function update_x_nlopt(opt::Optimizer)
@@ -395,7 +419,7 @@ function update_x_nlopt(opt::Optimizer)
             els[i].area = t_to_x(opt, t[i])
         end
 
-        g .= (opt.x_max - opt.x_min) * diff_obj(opt.compliance)
+        g .= opt.a1 * diff_obj(opt.compliance)
         obj_k = obj(opt.compliance)
 
         update_optimizer_obj_values!(opt, t, obj_k)
@@ -410,7 +434,7 @@ function update_x_nlopt(opt::Optimizer)
         for i = eachindex(t)
             g[i] = len(els[i])
         end
-        return (opt.x_max - opt.x_min) * (volume(opt.compliance.base.structure) - opt.volume_max)
+        return opt.a1 * (volume(opt.compliance.base.structure) - opt.volume_max)
     end
 
     if opt.algorithm == :MMA
@@ -426,10 +450,10 @@ function update_x_nlopt(opt::Optimizer)
     optim.inequality_constraint = Vc
     optim.params["verbosity"] = 0
 
-    optim.lower_bounds = fill(opt.x_min, n)
-    optim.upper_bounds = fill(opt.x_max, n)
+    optim.lower_bounds = fill(opt.t_min, n)
+    optim.upper_bounds = fill(opt.t_max, n)
 
-    t0 = @. (opt.x_k-opt.x_min)/(opt.x_max-opt.x_min)
+    t0 = x_to_t(opt, opt.x_k)
 
     (minf, mint, ret) = optimize(optim, t0)
 
