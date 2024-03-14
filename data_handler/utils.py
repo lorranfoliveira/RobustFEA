@@ -1,17 +1,20 @@
 import ezdxf
 import numpy as np
 
-def generate_fan_example(b, h, n):
+def generate_fan_example(b, n):
     if n%2 == 0:
         n += 1
 
-    nodes = np.zeros((n + 1, 2))
+    nodes = np.zeros((2*n + 1, 2))
 
     # Right node
-    nodes[0] = [b, 0.0]
+    nodes[0] = [0.0, 0.0]
 
-    for i, y in enumerate(np.linspace(-h/2, h/2, n)):
-        nodes[i + 1] = [0.0, y]
+    for i, y in enumerate(np.linspace(-b/2, b/2, n)):
+        nodes[i + 1] = [-b/2, y]
+
+    for i, y in enumerate(np.linspace(-b/2, b/2, n)):
+        nodes[n + i + 1] = [b/2, y]
 
     doc = ezdxf.new("R2010")
     msp = doc.modelspace()
@@ -30,7 +33,7 @@ def generate_fan_example(b, h, n):
     for node in nodes[1:]:
         msp.add_line(nodes[0], node, dxfattribs={"layer": "elements_default"})
 
-    doc.saveas("fan.dxf")
+    doc.saveas("fan2.dxf")
 
 
-generate_fan_example(10, 20, 35)
+generate_fan_example(20, 35)
