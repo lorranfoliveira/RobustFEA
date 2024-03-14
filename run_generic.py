@@ -23,7 +23,7 @@ def run(filename):
                                 save_error=False)
         
         #comp = ComplianceMu(0.1)
-        comp = ComplianceSmoothTheta(theta_r=np.radians(90), beta=0.001)
+        comp = ComplianceSmoothTheta(theta_r=np.radians(1), beta=0.001)
         #comp = CompliancePNorm(p=20.0)
         #comp = ComplianceNominal()
 

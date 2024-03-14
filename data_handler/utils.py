@@ -33,7 +33,7 @@ def generate_fan_example(b, n):
     for node in nodes[1:]:
         msp.add_line(nodes[0], node, dxfattribs={"layer": "elements_default"})
 
-    doc.saveas("fan2.dxf")
+    doc.saveas("fan.dxf")
 
 
-generate_fan_example(20, 35)
+generate_fan_example(20, 5001)
