@@ -427,7 +427,7 @@ function update_x_nlopt(opt::Optimizer)
     optim.params["verbosity"] = 0
 
     optim.lower_bounds = fill(opt.x_min, n)
-    optim.upper_bounds = fill(opt.x_max, n)
+    optim.upper_bounds = fill(1.0, n)
 
     t0 = @. (opt.x_k-opt.x_min)/(opt.x_max-opt.x_min)
 
