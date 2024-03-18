@@ -1,6 +1,6 @@
 include("compliance/compliance.jl")
 
-using JSON, Statistics, JuMP, NLopt, Plots, ColorSchemes
+using JSON, Statistics, NLopt, Plots
 
 mutable struct Optimizer
     # manual
