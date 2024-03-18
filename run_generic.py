@@ -23,7 +23,7 @@ def run(filename):
                                 save_error=False)
         
         #comp = ComplianceMu(0.1)
-        comp = ComplianceSmoothTheta(theta_r=np.radians(90), beta=0.001)
+        comp = ComplianceSmoothTheta(theta_r=np.radians(90), beta=0.01)
         #comp = CompliancePNorm(p=20.0)
         #comp = ComplianceNominal()
 
@@ -38,7 +38,6 @@ def run(filename):
                                     use_layout_constraint=False,
                                     x_min=1e-12,
                                     tolerance=1e-8)
-
 
         modeller = Modeller(filename=filename,
                             data_to_save=save_data,
@@ -71,15 +70,15 @@ def run(filename):
                                     plot_supports=True)
 
     modeller.plot_optimized_structure(cutoff=1e-4,
-                                    base_width=3,
+                                    base_width=1,
                                     supports_markers_size=markers_sizes,
                                     supports_markers_width=markers_width,
                                     supports_markers_color='green',
                                     forces_markers_size=1,
                                     forces_markers_color='gray',
-                                    plot_loads=True,
+                                    plot_loads=False,
                                     plot_supports=True)
 
     modeller.plot_compliance()
 
-run('fan.json')
+run('fan_circle.json')

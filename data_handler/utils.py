@@ -8,8 +8,8 @@ def xy_circle(radius, n)->np.array:
     if n%2 == 0:
         raise ValueError("n must be odd")
     
-    thetas1 = np.linspace(-np.pi/4, np.pi/4, n, endpoint=False)
-    thetas2 =  np.linspace(3*np.pi/4, 5*np.pi/4, n, endpoint=False)
+    thetas1 = np.linspace(-np.pi/4, np.pi/4, n)
+    thetas2 =  np.linspace(5*np.pi/4, 3*np.pi/4, n)
     # Concatenate thetas
     thetas = np.concatenate([thetas1, thetas2])
 
@@ -41,5 +41,4 @@ def generate_fan_example(radius, n):
 
     doc.saveas("fan_circle.dxf")
 
-
-generate_fan_example(10, 11)
+generate_fan_example(5, 31)

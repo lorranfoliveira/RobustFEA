@@ -354,15 +354,16 @@ class Modeller:
         ax.set_ylim(self.y_limits())
         #ax.set_title(f'elements: {len(self.structure.elements)} file: {self.filename}')
         # plt.title(f'Optimized structure - {self.filename.replace(".json", "")}')
-        plt.colorbar(plt.cm.ScalarMappable(cmap=colormap), ax=ax, shrink=0.5)
+        plt.colorbar(plt.cm.ScalarMappable(cmap=colormap), ax=ax, shrink=0.5, label='Normalized area')
         plt.show()
         #plt.savefig(self.filename.replace(".json", ".png"), dpi=300)
 
     def plot_compliance(self):
         compliance = np.array([iteration.compliance for iteration in self.result_iterations.iterations])
-        plt.plot(compliance)
+        plt.plot(compliance, lw=1)
         plt.xlabel('Iteration')
         plt.ylabel('Compliance')
+        plt.title(f'Iterations: {len(compliance)}    Min compliance: {compliance[-1]:.2f}')
         # plt.title(f'Compliance - {self.filename.replace(".json", "")}')
         plt.show()
 
