@@ -388,6 +388,7 @@ function update_x_nlopt(opt::Optimizer)
     els = opt.compliance.base.structure.elements
     n = length(els)
     opt.iter = 0
+    a₀ = (opt.x_max - opt.x_min) 
 
     function C(t::Vector, g::Vector)
         # update areas 
@@ -395,7 +396,7 @@ function update_x_nlopt(opt::Optimizer)
             els[i].area = t_to_x(opt, t[i])
         end
 
-        g .= (opt.x_max - opt.x_min) * diff_obj(opt.compliance)
+        g .= a₀ * diff_obj(opt.compliance)
         obj_k = obj(opt.compliance)
 
         update_optimizer_obj_values!(opt, t, obj_k)
@@ -407,10 +408,8 @@ function update_x_nlopt(opt::Optimizer)
         for i = eachindex(t)
             els[i].area = t_to_x(opt, t[i])
         end
-        for i = eachindex(t)
-            g[i] = len(els[i])
-        end
-        return (opt.x_max - opt.x_min) * (volume(opt.compliance.base.structure) - opt.volume_max)
+        g .= a₀ * map(len, els)
+        return (volume(opt.compliance.base.structure) - opt.volume_max)
     end
 
     if opt.algorithm == :MMA

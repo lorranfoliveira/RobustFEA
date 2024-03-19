@@ -41,4 +41,4 @@ def generate_fan_example(radius, n):
 
     doc.saveas("fan_circle.dxf")
 
-generate_fan_example(5, 31)
+generate_fan_example(5, 101)
